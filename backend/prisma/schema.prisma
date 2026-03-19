@@ -1,0 +1,63 @@
+// Prisma Schema - ConectaRH
+// Documentação: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================
+// Models do Sistema de Gestão de Treinamentos
+// =============================================
+
+model Colaborador {
+  id            Int            @id @default(autoincrement())
+  matricula     String         @unique
+  nome          String
+  email         String         @unique
+  cargo         String?
+  departamento  String?
+  ativo         Boolean        @default(true)
+  criadoEm      DateTime       @default(now()) @map("criado_em")
+  atualizadoEm  DateTime       @updatedAt @map("atualizado_em")
+  participacoes Participacao[]
+
+  @@map("colaboradores")
+}
+
+model Treinamento {
+  id            Int            @id @default(autoincrement())
+  titulo        String
+  descricao     String?
+  cargaHoraria  Int            @map("carga_horaria")
+  modalidade    String         @default("presencial") // presencial, online, hibrido
+  status        String         @default("planejado")  // planejado, em_andamento, concluido, cancelado
+  dataInicio    DateTime?      @map("data_inicio")
+  dataFim       DateTime?      @map("data_fim")
+  criadoEm      DateTime       @default(now()) @map("criado_em")
+  atualizadoEm  DateTime       @updatedAt @map("atualizado_em")
+  participacoes Participacao[]
+
+  @@map("treinamentos")
+}
+
+model Participacao {
+  id              Int          @id @default(autoincrement())
+  colaboradorId   Int          @map("colaborador_id")
+  treinamentoId   Int          @map("treinamento_id")
+  statusPresenca  String       @default("inscrito") @map("status_presenca") // inscrito, presente, ausente
+  nota            Float?
+  certificado     Boolean      @default(false)
+  criadoEm        DateTime     @default(now()) @map("criado_em")
+  atualizadoEm    DateTime     @updatedAt @map("atualizado_em")
+
+  colaborador     Colaborador  @relation(fields: [colaboradorId], references: [id])
+  treinamento     Treinamento  @relation(fields: [treinamentoId], references: [id])
+
+  @@unique([colaboradorId, treinamentoId])
+  @@map("participacoes")
+}
