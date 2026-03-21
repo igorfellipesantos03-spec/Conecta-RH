@@ -20,6 +20,18 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// Import Routes
+const discRoutes = require('./routes/discRoutes');
+const authRoutes = require('./routes/authRoutes');
+
+// Rotas da API
+app.use('/api/disc', discRoutes);
+app.use('/api/auth', authRoutes);
+
+// Rotas de Employees
+const { checkCpf } = require('./controllers/employeeController');
+app.get('/api/employees/check-cpf/:cpf', checkCpf);
+
 // Rota de busca de funcionários — GET /api/funcionarios?busca=nome
 app.get('/api/funcionarios', async (req, res) => {
   try {

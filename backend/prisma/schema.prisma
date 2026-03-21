@@ -7,7 +7,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // =============================================
@@ -60,4 +59,15 @@ model Participacao {
 
   @@unique([colaboradorId, treinamentoId])
   @@map("participacoes")
+}
+
+model DiscLink {
+  id         String   @id @default(uuid())
+  isEmployee Boolean  @default(true)
+  companyId  String
+  branchId   String
+  status     String   @default("PENDING")
+  criadoEm   DateTime @default(now()) @map("criado_em")
+
+  @@map("disc_links")
 }

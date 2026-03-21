@@ -2,9 +2,9 @@ const axios = require('axios');
 
 // URLs da API do Protheus
 const PROTHEUS_AUTH_URL =
-  'https://restauth.protheus.conasa.com/rest/api/oauth2/v1/token?grant_type=password';
+  'https://restauth.protheusteste.conasa.com/rest/api/oauth2/v1/token?grant_type=password';
 const PROTHEUS_DATA_URL =
-  'https://restauth.protheus.conasa.com/rest/rh/v1/employeedatacontent/';
+  'https://restauth.protheusteste.conasa.com/rest/rh/v1/employeedatacontent/';
 
 /**
  * Obtém o access_token do Protheus via OAuth2 (grant_type=password)
@@ -40,11 +40,34 @@ async function buscarFuncionarios(nomeBusca) {
       companyId: '07',
       branchId: '01',
       fields: 'companyKey,branch,code,name,id,cpf,RA_CIC',
-      filter: "RA_DEMISSA = ' ' and RA_NOMECMP LIKE '" + nomeBusca.toUpperCase() + "%'",
+      filter: "RA_NOMECMP LIKE '" + nomeBusca.toUpperCase() + "%'",
     },
   });
 
   return response.data;
 }
 
-module.exports = { getProtheusToken, buscarFuncionarios };
+/**
+ * Busca funcionário no Protheus pelo CPF e dados do token (company/branch)
+ */
+async function buscarFuncionarioPorCpf(cpf, companyId, branchId) {
+  const token = await getProtheusToken();
+  const cpfLimpo = cpf.replace(/\D/g, '');
+
+  const response = await axios.get(PROTHEUS_DATA_URL, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    params: {
+      product: 'PROTHEUS',
+      companyId: companyId,
+      branchId: branchId,
+      fields: 'companyKey,branch,code,name,id,cpf,RA_CIC',
+      filter: "RA_CIC = '" + cpfLimpo + "'",
+    },
+  });
+
+  return response.data;
+}
+
+module.exports = { getProtheusToken, buscarFuncionarios, buscarFuncionarioPorCpf };

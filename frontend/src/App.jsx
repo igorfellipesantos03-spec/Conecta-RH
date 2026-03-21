@@ -1,14 +1,31 @@
 import { useState, useEffect, useRef } from 'react'
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import Header from './components/Header'
+import Sidebar from './components/Sidebar'
 import HubCard from './components/HubCard'
+import DiscResults from './pages/public/DiscResults'
+import DiscForm from './pages/public/DiscForm'
+import DiscManager from './pages/rh/DiscManager'
 
 // ==========================================
 // PÁGINA HOME (HUB)
 // ==========================================
 function Home() {
   const navigate = useNavigate()
+  const [firstName, setFirstName] = useState('')
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('@ConectaRH:user');
+      if (stored) {
+        const user = JSON.parse(stored);
+        if (user.name) {
+          setFirstName(user.name.split(' ')[0]);
+        }
+      }
+    } catch(err) {}
+  }, []);
 
   const mockCards = [
     {
@@ -24,25 +41,25 @@ function Home() {
     },
     {
       id: 2,
-      title: 'Gerar DISK',
-      description: 'Sistema para geração e controle de relatórios DISK do RH.',
+      title: 'DISC',
+      description: 'Sistema para geração e controle de relatórios DISC do RH.',
       icon: (
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
-      action: () => alert('Página Gerar DISK em desenvolvimento...')
+      action: () => navigate('/rh/disc-manager')
     },
     {
       id: 3,
-      title: 'Forms de Desligamento',
-      description: 'Acesse e gerencie os formulários padrão para processo de desligamento.',
+      title: 'OffBoarding',
+      description: 'Gerencie o processo de desligamento de colaboradores.',
       icon: (
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
-      action: () => alert('Página Forms de Desligamento em desenvolvimento...')
+      action: () => navigate('/disc-results')
     }
   ]
 
@@ -50,7 +67,7 @@ function Home() {
     <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-12 lg:py-20">
       <div className="mb-12">
         <h2 className="text-3xl md:text-4xl font-semibold text-white tracking-tight">
-          Olá, Igor. <span className="text-gray-400">O que você quer fazer hoje?</span>
+          Olá{firstName ? `, ${firstName}` : ''}. <span className="text-gray-400">O que você quer fazer hoje?</span>
         </h2>
       </div>
 
@@ -413,19 +430,75 @@ function TreinamentosDashboard() {
   )
 }
 
+import Login from './pages/rh/Login'
+import { Navigate, Outlet } from 'react-router-dom'
+
+// ==========================================
+// ROTA PROTEGIDA (Requer Login)
+// ==========================================
+function ProtectedRoute() {
+  const token = localStorage.getItem('@ConectaRH:access_token')
+  if (!token) {
+    // Se não tiver token, redireciona para o login passando a mensagem de erro no state
+    return <Navigate to="/rh/login" replace state={{ error: 'Por segurança, o login é obrigatório para acessar esta página.' }} />
+  }
+  return <Outlet />
+}
+
 // ==========================================
 // APP COMPONENT (ROUTER)
 // ==========================================
+function AppContent() {
+  const location = useLocation()
+
+  // Condições para esconder o Header Global
+  const hideHeaderRoutes = ['/rh/login', '/rh/login/']
+  const isPublicDiscForm = location.pathname.startsWith('/disc/responder/')
+  const shouldShowLayout = !hideHeaderRoutes.includes(location.pathname) && !isPublicDiscForm
+
+  if (!shouldShowLayout) {
+    // Retorna apenas as rotas (sem barra lateral/header)
+    return (
+      <div className="min-h-screen bg-gray-950 font-sans text-gray-100 flex flex-col">
+        <Routes>
+          <Route path="/rh/login" element={<Login />} />
+          <Route path="/disc/responder/:token" element={<DiscForm />} />
+          <Route path="/disc/responder/:token/resultados" element={<DiscResults />} />
+        </Routes>
+      </div>
+    )
+  }
+
+  // Layout do Dashboard Interno
+  return (
+    <div className="min-h-screen bg-gray-950 font-sans text-gray-100 flex">
+      {/* Sidebar Lateral */}
+      <Sidebar />
+
+      {/* Área Principal Direita */}
+      <div className="flex-1 flex flex-col min-w-0">
+        <Header />
+
+        {/* Conteúdo Dinâmico */}
+        <div className="flex-1 overflow-y-auto">
+          <Routes>
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<Home />} />
+              <Route path="/treinamentos" element={<TreinamentosDashboard />} />
+              <Route path="/rh/disc-manager" element={<DiscManager />} />
+              <Route path="/disc-results" element={<DiscResults />} />
+            </Route>
+          </Routes>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen bg-gray-950 font-sans text-gray-100 flex flex-col">
-        <Header />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/treinamentos" element={<TreinamentosDashboard />} />
-        </Routes>
-      </div>
+      <AppContent />
     </BrowserRouter>
   )
 }
