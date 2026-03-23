@@ -8,6 +8,7 @@ const PROTHEUS_DATA_URL =
 
 /**
  * Obtém o access_token do Protheus via OAuth2 (grant_type=password)
+ * Usa credenciais do .env (Acesso genérico/sistema)
  */
 async function getProtheusToken() {
   const response = await axios.post(
@@ -22,6 +23,25 @@ async function getProtheusToken() {
   );
 
   return response.data.access_token;
+}
+
+/**
+ * Obtém o access_token do Protheus via OAuth2 (grant_type=password) 
+ * de forma dinâmica para login de usuários.
+ */
+async function getProtheusTokenDynamic(username, password) {
+  const response = await axios.post(
+    PROTHEUS_AUTH_URL,
+    new URLSearchParams({
+      username: username,
+      password: password,
+    }),
+    {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    }
+  );
+
+  return response.data;
 }
 
 /**
@@ -70,4 +90,4 @@ async function buscarFuncionarioPorCpf(cpf, companyId, branchId) {
   return response.data;
 }
 
-module.exports = { getProtheusToken, buscarFuncionarios, buscarFuncionarioPorCpf };
+module.exports = { getProtheusToken, getProtheusTokenDynamic, buscarFuncionarios, buscarFuncionarioPorCpf };

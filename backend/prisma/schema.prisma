@@ -71,3 +71,14 @@ model DiscLink {
 
   @@map("disc_links")
 }
+
+model User {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  role      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}

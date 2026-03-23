@@ -20,20 +20,21 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Import Routes
+// Import middlewares e routes
+const authMiddleware = require('./middlewares/authMiddleware');
 const discRoutes = require('./routes/discRoutes');
 const authRoutes = require('./routes/authRoutes');
 
-// Rotas da API
+// Rotas da API (Não autenticadas)
 app.use('/api/disc', discRoutes);
 app.use('/api/auth', authRoutes);
 
-// Rotas de Employees
+// Rotas de Employees (Pública - Match Exato CPF)
 const { checkCpf } = require('./controllers/employeeController');
 app.get('/api/employees/check-cpf/:cpf', checkCpf);
 
-// Rota de busca de funcionários — GET /api/funcionarios?busca=nome
-app.get('/api/funcionarios', async (req, res) => {
+// Rota de busca de funcionários — GET /api/funcionarios?busca=nome (Autenticada via JWT)
+app.get('/api/funcionarios', authMiddleware, async (req, res) => {
   try {
     const { busca } = req.query;
 

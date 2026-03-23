@@ -53,14 +53,15 @@ const checkCpf = async (req, res) => {
         });
       }
 
-      // Retorna o primeiro encontrado
+      // Retorna o primeiro encontrado e aplica LGPD (higienização)
       const func = Array.isArray(items) ? items[0] : items;
 
       return res.status(200).json({
         sucesso: true,
         dados: {
           isEmployee: true,
-          ...func
+          nome: func.name, // Frontend precisa do "name" ou "nome"
+          name: func.name, // Mantendo ambos por retrocompatibilidade temporária com DiscForm
         }
       });
 

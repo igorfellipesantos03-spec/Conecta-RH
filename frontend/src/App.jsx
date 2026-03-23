@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, useLocation } from 'react-router-dom'
-import axios from 'axios'
+import api from './services/api'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import HubCard from './components/HubCard'
@@ -24,7 +24,7 @@ function Home() {
           setFirstName(user.name.split(' ')[0]);
         }
       }
-    } catch(err) {}
+    } catch (err) { }
   }, []);
 
   const mockCards = [
@@ -130,8 +130,8 @@ function TreinamentosDashboard() {
     debounceRef.current = setTimeout(async () => {
       setLoadingBusca(true)
       try {
-        const response = await axios.get(
-          'http://localhost:3001/api/funcionarios?busca=' + encodeURIComponent(busca.trim())
+        const response = await api.get(
+          '/funcionarios?busca=' + encodeURIComponent(busca.trim())
         )
         if (response.data.sucesso) {
           const items = response.data.dados?.items || response.data.dados || []
