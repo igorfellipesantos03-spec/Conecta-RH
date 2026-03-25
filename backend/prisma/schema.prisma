@@ -62,12 +62,17 @@ model Participacao {
 }
 
 model DiscLink {
-  id         String   @id @default(uuid())
-  isEmployee Boolean  @default(true)
-  companyId  String
-  branchId   String
-  status     String   @default("PENDING")
-  criadoEm   DateTime @default(now()) @map("criado_em")
+  id           String   @id @default(uuid())
+  isEmployee   Boolean  @default(true)
+  companyId    String?
+  branchId     String?
+  
+  status       String   @default("PENDING") // PENDING, PROGRESS, CONCLUDED, EXPIRED
+  isActive     Boolean  @default(true)      @map("is_active")
+  
+  expiraEm     DateTime @map("expira_em")
+  criadoEm     DateTime @default(now()) @map("criado_em")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
   @@map("disc_links")
 }

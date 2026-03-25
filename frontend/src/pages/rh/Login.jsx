@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
@@ -11,6 +11,16 @@ export default function Login() {
   // Se redirecionado pelo ProtectedRoute, exibe a mensagem de erro que veio no state
   const [errorMsg, setErrorMsg] = useState(location.state?.error || '');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Checa parâmetros da URL para identificar logout por inatividade
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('expired') === 'true') {
+      setErrorMsg('Sessão expirada. Você foi desconectado por inatividade.');
+      // Opcional: Limpar o param da URL para evitar mostrar de novo no reload
+      window.history.replaceState({}, document.title, location.pathname);
+    }
+  }, [location]);
 
   const handleLogin = async (e) => {
     e.preventDefault();

@@ -5,20 +5,27 @@ export default function DiscResults() {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Recebe os dados passados pelo roteamento (via navigate state) ou mocka dados default caso seja acessado diretamente
-  const resultados = location.state?.resultados || {
-    ambienteNatural: { D: 85, I: 60, S: 30, C: 20 },
-    ambienteAdaptado: { D: 75, I: 70, S: 40, C: 30 },
-    perfilPredominanteNatural: 'Dominância (Executor)',
-    perfilPredominanteAdaptado: 'Dominância (Executor)',
-    perfilMestre: 'Dominância (Executor)'
+  const rawRes = location.state?.resultados;
+
+  const ambienteNatural = rawRes?.natural || rawRes?.ambienteNatural || { D: 85, I: 60, S: 30, C: 20 };
+  const ambienteAdaptado = rawRes?.adaptado || rawRes?.ambienteAdaptado || { D: 75, I: 70, S: 40, C: 30 };
+
+  const getPerfilName = (dados) => {
+    let maxLetter = 'D';
+    let maxVal = -1;
+    for (const [k, v] of Object.entries(dados)) {
+      if (v > maxVal) { maxVal = v; maxLetter = k; }
+    }
+    const map = {
+      D: 'Dominância (Executor)',
+      I: 'Influência (Comunicador)',
+      S: 'Estabilidade (Planejador)',
+      C: 'Conformidade (Analista)'
+    };
+    return map[maxLetter];
   };
 
-  const {
-    ambienteNatural,
-    ambienteAdaptado,
-    perfilMestre
-  } = resultados;
+  const perfilMestre = rawRes?.perfilMestre || getPerfilName(ambienteNatural);
 
   // Formata os dados para o Recharts
   const dataNatural = [

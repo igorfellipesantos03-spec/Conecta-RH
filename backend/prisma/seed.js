@@ -21,8 +21,8 @@ async function main() {
     for (const username of tiUsers) {
       await prisma.user.upsert({
         where: { username },
-        update: { role: 'Tecnologia da Informação', active: true },
-        create: { username, role: 'Tecnologia da Informação', active: true },
+        update: { role: 'TI', active: true },
+        create: { username, role: 'TI', active: true },
       });
     }
 
@@ -38,12 +38,12 @@ async function main() {
     const { Client } = require('pg');
     const client = new Client({ connectionString: process.env.DATABASE_URL });
     await client.connect();
-    
+
     for (const username of tiUsers) {
       await client.query(`
         INSERT INTO "users" (id, username, role, active, created_at, updated_at)
-        VALUES (gen_random_uuid()::text, $1, 'Tecnologia da Informação', true, NOW(), NOW())
-        ON CONFLICT (username) DO UPDATE SET role = 'Tecnologia da Informação', active = true, updated_at = NOW();
+        VALUES (gen_random_uuid()::text, $1, 'TI', true, NOW(), NOW())
+        ON CONFLICT (username) DO UPDATE SET role = 'TI', active = true, updated_at = NOW();
       `, [username]);
     }
     for (const username of rhUsers) {

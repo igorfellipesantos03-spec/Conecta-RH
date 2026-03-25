@@ -1,21 +1,18 @@
 require('dotenv').config();
-const { Client } = require('pg');
-const fs = require('fs');
+const { buscarFuncionarios } = require('./src/services/protheusService');
 
-const client = new Client({ connectionString: process.env.DATABASE_URL });
-async function run() {
-  await client.connect();
+async function test() {
   try {
-    const username = 'test_fallback';
-    await client.query(`
-      INSERT INTO "users" (id, username, role, active, created_at, updated_at)
-      VALUES (gen_random_uuid()::text, $1, 'TI', true, NOW(), NOW())
-    `, [username]);
-    console.log("Success");
-  } catch (e) {
-    fs.writeFileSync('err_test.log', e.message + '\n' + (e.detail || '') + '\n' + e.stack);
-  } finally {
-    await client.end();
+    const res = await buscarFuncionarios('igor');
+    console.log('Sucesso:', res);
+  } catch (err) {
+    if (err.response) {
+      console.log('--- RESPOSTA DE ERRO COMPLETA ---');
+      console.log(JSON.stringify(err.response.data, null, 2));
+    } else {
+      console.error('Erro Genérico:', err.message);
+    }
   }
 }
-run();
+
+test();

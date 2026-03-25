@@ -70,7 +70,7 @@ exports.login = async (req, res) => {
       protheusToken: protheusAccessToken
     };
 
-    const token = jwt.sign(sessionPayload, JWT_SECRET, { expiresIn: '0.5h' });
+    const token = jwt.sign(sessionPayload, JWT_SECRET, { expiresIn: '15m' });
 
     // 6. Sucesso: Repassar Somente o JWT Customizado
     return res.status(200).json({

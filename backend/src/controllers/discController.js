@@ -1,4 +1,5 @@
 const { calcularDISC } = require('../services/discCalculator');
+const discLinkService = require('../services/discLinkService');
 
 /**
  * Controller para lidar com a submissão e cálculo do teste DISC.
@@ -51,13 +52,10 @@ const generateLink = async (req, res) => {
       return res.status(400).json({ sucesso: false, mensagem: 'companyId e branchId são obrigatórios.' });
     }
 
-    const discLink = await prisma.discLink.create({
-      data: {
-        isEmployee: Boolean(isEmployee),
-        companyId,
-        branchId,
-        status: 'PENDING'
-      }
+    const discLink = await discLinkService.criarLink({
+      isEmployee: Boolean(isEmployee),
+      companyId,
+      branchId
     });
 
     return res.status(201).json({
@@ -82,16 +80,11 @@ const validateLink = async (req, res) => {
   try {
     const { token } = req.params;
     if (!token) {
-      return res.status(400).json({ sucesso: false, mensagem: 'O token é obrigatório.' });
+      return res.status(404).send();
     }
 
-    const discLink = await prisma.discLink.findUnique({
-      where: { id: token }
-    });
-
-    if (!discLink) {
-      return res.status(404).json({ sucesso: false, mensagem: 'Este link de teste é inválido ou não existe.' });
-    }
+    // Utiliza a nova Máquina de Estados (Que inativa se expirado e evolui para PROGRESS se estiver PENDING)
+    const discLink = await discLinkService.validarAcessoLink(token);
 
     return res.status(200).json({
       sucesso: true,
@@ -103,12 +96,31 @@ const validateLink = async (req, res) => {
 
   } catch (error) {
     console.error('Erro na validação do link:', error);
-    return res.status(500).json({ sucesso: false, mensagem: 'Erro interno ao processar validação.' });
+    return res.status(404).send();
+  }
+};
+
+/**
+ * Endpoint para Finalizar o Link após o término do teste.
+ * Altera status para CONCLUDED.
+ */
+const concluirTeste = async (req, res) => {
+  try {
+    const { token } = req.params;
+    if (!token) return res.status(400).json({ sucesso: false, mensagem: 'Token não informado.' });
+
+    await discLinkService.finalizarLink(token);
+
+    return res.status(200).json({ sucesso: true, mensagem: 'Link finalizado com sucesso.' });
+  } catch (error) {
+    console.error('Erro ao finalizar o link:', error);
+    return res.status(500).json({ sucesso: false, mensagem: 'Erro interno ao finalizar link.', erro: error.message });
   }
 };
 
 module.exports = {
   calcularTeste,
   generateLink,
-  validateLink
+  validateLink,
+  concluirTeste
 };

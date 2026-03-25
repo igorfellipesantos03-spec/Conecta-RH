@@ -6,6 +6,8 @@ const { buscarFuncionarios } = require('./services/protheusService');
 
 const app = express();
 
+require('./services/cronJobs'); // Inicia as tarefas em segundo plano
+
 // Middlewares
 app.use(cors());
 app.use(express.json());
@@ -20,20 +22,19 @@ app.get('/api/status', (req, res) => {
   });
 });
 
-// Import middlewares e routes
 const authMiddleware = require('./middlewares/authMiddleware');
 const discRoutes = require('./routes/discRoutes');
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 
-// Rotas da API (Não autenticadas)
 app.use('/api/disc', discRoutes);
 app.use('/api/auth', authRoutes);
 
-// Rotas de Employees (Pública - Match Exato CPF)
+app.use('/api/users', authMiddleware, userRoutes);
+
 const { checkCpf } = require('./controllers/employeeController');
 app.get('/api/employees/check-cpf/:cpf', checkCpf);
 
-// Rota de busca de funcionários — GET /api/funcionarios?busca=nome (Autenticada via JWT)
 app.get('/api/funcionarios', authMiddleware, async (req, res) => {
   try {
     const { busca } = req.query;
