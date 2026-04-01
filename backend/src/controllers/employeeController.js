@@ -5,10 +5,12 @@ const { PrismaClient } = require('@prisma/client');
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
-const { buscarFuncionarioPorCpf } = require('../services/protheusService');
+const { buscarFuncionarioPorCpfSistema } = require('../services/protheusService');
 
 /**
  * Controller para checar o CPF do candidato usando os parametros do Token.
+ * Usa token de SISTEMA (não depende de sessão de usuário logado),
+ * pois esta é uma rota pública acessada pelo formulário DISC.
  */
 const checkCpf = async (req, res) => {
   try {
@@ -28,7 +30,7 @@ const checkCpf = async (req, res) => {
       return res.status(404).json({ sucesso: false, mensagem: 'Token inválido ou não encontrado.' });
     }
 
-    // Se nâo for funcionário, apenas retorna "Liberado" sem buscar no Protheus
+    // Se não for funcionário, apenas retorna "Liberado" sem buscar no Protheus
     if (!discLink.isEmployee) {
       return res.status(200).json({
         sucesso: true,
@@ -41,9 +43,9 @@ const checkCpf = async (req, res) => {
       });
     }
 
-    // Se FOR funcionário atual, busca no Protheus usando as refs do token
+    // Se FOR funcionário atual, busca no Protheus usando token de SISTEMA
     try {
-      const funcionarioDados = await buscarFuncionarioPorCpf(cpf, discLink.companyId, discLink.branchId);
+      const funcionarioDados = await buscarFuncionarioPorCpfSistema(cpf, discLink.companyId, discLink.branchId);
       
       const items = funcionarioDados?.items || funcionarioDados;
       if (!items || items.length === 0) {
@@ -60,8 +62,9 @@ const checkCpf = async (req, res) => {
         sucesso: true,
         dados: {
           isEmployee: true,
-          nome: func.name, // Frontend precisa do "name" ou "nome"
-          name: func.name, // Mantendo ambos por retrocompatibilidade temporária com DiscForm
+          nome: func.name,
+          name: func.name, // Retrocompatibilidade temporária com DiscForm
+          costCenterDescription: func.costCenterDescription
         }
       });
 

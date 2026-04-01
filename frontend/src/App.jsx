@@ -7,6 +7,9 @@ import HubCard from './components/HubCard'
 import DiscResults from './pages/public/DiscResults'
 import DiscForm from './pages/public/DiscForm'
 import DiscManager from './pages/rh/DiscManager'
+import DiscHub from './pages/rh/DiscHub'
+import DiscDashboard from './pages/rh/DiscDashboard'
+import AccessDenied from './pages/rh/AccessDenied'
 
 // ==========================================
 // PÁGINA HOME (HUB)
@@ -37,7 +40,7 @@ function Home() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
         </svg>
       ),
-      action: () => navigate('/treinamentos')
+      action: () => navigate('/em-desenvolvimento')
     },
     {
       id: 2,
@@ -48,7 +51,7 @@ function Home() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
-      action: () => navigate('/rh/disc-manager')
+      action: () => navigate('/rh/disc-hub')
     },
     {
       id: 3,
@@ -59,7 +62,7 @@ function Home() {
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
         </svg>
       ),
-      action: () => navigate('/disc-results')
+      action: () => navigate('/em-desenvolvimento')
     }
   ]
 
@@ -434,22 +437,125 @@ import Login from './pages/rh/Login'
 import { Navigate, Outlet } from 'react-router-dom'
 
 // ==========================================
-// ROTA PROTEGIDA (Requer Login)
+// PÁGINA EM DESENVOLVIMENTO
 // ==========================================
-function ProtectedRoute() {
+function EmDesenvolvimento() {
+  const navigate = useNavigate()
+  return (
+    <main className="flex-1 w-full flex flex-col items-center justify-center p-6 text-center h-full min-h-[60vh]">
+      <div className="w-20 h-20 mb-6 text-blue-500 bg-blue-500/10 flex items-center justify-center rounded-3xl">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" className="w-10 h-10" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      </div>
+      <h2 className="text-3xl font-bold text-white mb-3">Em Desenvolvimento</h2>
+      <p className="text-gray-400 max-w-sm mb-8 leading-relaxed">
+        Esta área ainda está sendo construída. Nossa equipe está trabalhando para trazer novas funcionalidades em breve!
+      </p>
+      <button
+        onClick={() => navigate('/')}
+        className="bg-gray-800 hover:bg-gray-700 text-white font-medium py-3 px-6 rounded-xl transition-colors cursor-pointer flex items-center gap-2"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+        </svg>
+        Voltar para o Início
+      </button>
+    </main>
+  )
+}
+
+/**
+ * Rota protegida com suporte a RBAC.
+ *
+ * @param {string[]} allowedRoles - Lista de roles com acesso à rota.
+ *   Se omitida, qualquer usuário autenticado tem acesso.
+ *
+ * Fluxo:
+ *   1. Sem token → redireciona para /rh/login
+ *   2. Com token, role não autorizada → redireciona para /acesso-negado
+ *   3. OK → renderiza o <Outlet />
+ */
+function ProtectedRoute({ allowedRoles }) {
   const token = localStorage.getItem('@ConectaRH:access_token')
   if (!token) {
-    // Se não tiver token, redireciona para o login passando a mensagem de erro no state
-    return <Navigate to="/rh/login" replace state={{ error: 'Por segurança, o login é obrigatório para acessar esta página.' }} />
+    return <Navigate to="/rh/login" replace state={{ error: 'Por segurança, o login é obrigatório.' }} />
   }
+
+  // Verifica role somente quando allowedRoles for informado
+  if (allowedRoles && allowedRoles.length > 0) {
+    try {
+      const storedUser = JSON.parse(localStorage.getItem('@ConectaRH:user') || '{}')
+      // Normaliza roles legadas para o formato atual do RBAC
+      const ROLE_MAP = { ADMIN: 'ADMIN', RH: 'RH', GESTOR: 'GESTOR', TI: 'ADMIN', 'Recursos Humanos': 'RH', 'recursos humanos': 'RH' }
+      const userRole = ROLE_MAP[storedUser.role] || 'RH'
+      if (!allowedRoles.includes(userRole)) {
+        return <Navigate to="/acesso-negado" replace />
+      }
+    } catch {
+      return <Navigate to="/rh/login" replace />
+    }
+  }
+
   return <Outlet />
 }
 
 // ==========================================
 // APP COMPONENT (ROUTER)
 // ==========================================
+const INACTIVITY_TIMEOUT_MS = 15 * 60 * 1000;  // 15 minutos
+const WARNING_BEFORE_MS = 2 * 60 * 1000;  // aviso 2 min antes
+
 function AppContent() {
   const location = useLocation()
+  const navigate = useNavigate()
+  const timerRef = useRef(null)
+  const warnRef = useRef(null)
+  const [showWarning, setShowWarning] = useState(false)
+
+  // Só aplica inatividade em rotas protegidas (não na login nem em formulários públicos)
+  const isProtected = !location.pathname.startsWith('/rh/login') &&
+    !location.pathname.startsWith('/disc/responder')
+
+  const logout = useRef(() => {
+    localStorage.removeItem('@ConectaRH:access_token')
+    localStorage.removeItem('@ConectaRH:refresh_token')
+    localStorage.removeItem('@ConectaRH:user')
+    setShowWarning(false)
+    navigate('/rh/login?expired=true', { replace: true })
+  })
+
+  const resetTimer = useRef(() => {
+    clearTimeout(timerRef.current)
+    clearTimeout(warnRef.current)
+    setShowWarning(false)
+
+    // Aviso 2 min antes
+    warnRef.current = setTimeout(() => setShowWarning(true), INACTIVITY_TIMEOUT_MS - WARNING_BEFORE_MS)
+    // Logout automático
+    timerRef.current = setTimeout(() => logout.current(), INACTIVITY_TIMEOUT_MS)
+  })
+
+  useEffect(() => {
+    if (!isProtected) return
+
+    const token = localStorage.getItem('@ConectaRH:access_token')
+    if (!token) return
+
+    const EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
+    const handler = () => resetTimer.current()
+
+    EVENTS.forEach(e => window.addEventListener(e, handler, { passive: true }))
+    resetTimer.current()  // inicia o timer ao montar
+
+    return () => {
+      EVENTS.forEach(e => window.removeEventListener(e, handler))
+      clearTimeout(timerRef.current)
+      clearTimeout(warnRef.current)
+    }
+  }, [isProtected])
+
 
   // Condições para esconder o Header Global
   const hideHeaderRoutes = ['/rh/login', '/rh/login/']
@@ -472,6 +578,40 @@ function AppContent() {
   // Layout do Dashboard Interno
   return (
     <div className="min-h-screen bg-gray-950 font-sans text-gray-100 flex">
+
+      {/* ── Modal de Aviso de Inatividade ────────────────── */}
+      {showWarning && (
+        <div className="fixed inset-0 z-[9999] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-yellow-500/30 rounded-2xl p-8 max-w-md w-full shadow-2xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 rounded-full bg-yellow-500/15 flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-white font-semibold text-lg">Sessão prestes a expirar</h3>
+                <p className="text-gray-400 text-sm">Sua sessão será encerrada em 2 minutos por inatividade.</p>
+              </div>
+            </div>
+            <div className="flex gap-3 justify-end mt-6">
+              <button
+                onClick={() => logout.current()}
+                className="px-4 py-2 rounded-xl text-sm text-gray-400 hover:text-white border border-gray-700 hover:border-gray-600 transition-colors cursor-pointer"
+              >
+                Sair agora
+              </button>
+              <button
+                onClick={() => resetTimer.current()}
+                className="px-5 py-2 rounded-xl text-sm bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors cursor-pointer"
+              >
+                Continuar sessão
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar Lateral */}
       <Sidebar />
 
@@ -485,9 +625,19 @@ function AppContent() {
             <Route element={<ProtectedRoute />}>
               <Route path="/" element={<Home />} />
               <Route path="/treinamentos" element={<TreinamentosDashboard />} />
-              <Route path="/rh/disc-manager" element={<DiscManager />} />
+              <Route path="/em-desenvolvimento" element={<EmDesenvolvimento />} />
+              <Route path="/rh/disc-hub" element={<DiscHub />} />
+              <Route path="/disc" element={<DiscDashboard />} />
               <Route path="/disc-results" element={<DiscResults />} />
             </Route>
+
+            {/* Apenas ADMIN e RH podem gerar links DISC */}
+            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'RH']} />}>
+              <Route path="/rh/disc-manager" element={<DiscManager />} />
+            </Route>
+
+            {/* Tela de Acesso Negado (publica, sem login) */}
+            <Route path="/acesso-negado" element={<AccessDenied />} />
           </Routes>
         </div>
       </div>

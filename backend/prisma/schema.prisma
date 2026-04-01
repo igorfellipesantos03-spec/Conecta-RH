@@ -1,6 +1,3 @@
-// Prisma Schema - ConectaRH
-// Documentação: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,10 +5,6 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
-// =============================================
-// Models do Sistema de Gestão de Treinamentos
-// =============================================
 
 model Colaborador {
   id            Int            @id @default(autoincrement())
@@ -33,8 +26,8 @@ model Treinamento {
   titulo        String
   descricao     String?
   cargaHoraria  Int            @map("carga_horaria")
-  modalidade    String         @default("presencial") // presencial, online, hibrido
-  status        String         @default("planejado")  // planejado, em_andamento, concluido, cancelado
+  modalidade    String         @default("presencial")
+  status        String         @default("planejado")
   dataInicio    DateTime?      @map("data_inicio")
   dataFim       DateTime?      @map("data_fim")
   criadoEm      DateTime       @default(now()) @map("criado_em")
@@ -45,45 +38,50 @@ model Treinamento {
 }
 
 model Participacao {
-  id              Int          @id @default(autoincrement())
-  colaboradorId   Int          @map("colaborador_id")
-  treinamentoId   Int          @map("treinamento_id")
-  statusPresenca  String       @default("inscrito") @map("status_presenca") // inscrito, presente, ausente
-  nota            Float?
-  certificado     Boolean      @default(false)
-  criadoEm        DateTime     @default(now()) @map("criado_em")
-  atualizadoEm    DateTime     @updatedAt @map("atualizado_em")
-
-  colaborador     Colaborador  @relation(fields: [colaboradorId], references: [id])
-  treinamento     Treinamento  @relation(fields: [treinamentoId], references: [id])
+  id             Int         @id @default(autoincrement())
+  colaboradorId  Int         @map("colaborador_id")
+  treinamentoId  Int         @map("treinamento_id")
+  statusPresenca String      @default("inscrito") @map("status_presenca")
+  nota           Float?
+  certificado    Boolean     @default(false)
+  criadoEm       DateTime    @default(now()) @map("criado_em")
+  atualizadoEm   DateTime    @updatedAt @map("atualizado_em")
+  colaborador    Colaborador @relation(fields: [colaboradorId], references: [id])
+  treinamento    Treinamento @relation(fields: [treinamentoId], references: [id])
 
   @@unique([colaboradorId, treinamentoId])
   @@map("participacoes")
 }
 
 model DiscLink {
-  id           String   @id @default(uuid())
-  isEmployee   Boolean  @default(true)
-  companyId    String?
-  branchId     String?
-  
-  status       String   @default("PENDING") // PENDING, PROGRESS, CONCLUDED, EXPIRED
-  isActive     Boolean  @default(true)      @map("is_active")
-  
-  expiraEm     DateTime @map("expira_em")
-  criadoEm     DateTime @default(now()) @map("criado_em")
-  atualizadoEm DateTime @updatedAt @map("atualizado_em")
+  id              String   @id @default(uuid())
+  isEmployee      Boolean  @default(true)
+  companyId       String?
+  branchId        String?
+  status          String   @default("PENDING")
+  isActive        Boolean  @default(true) @map("is_active")
+  expiraEm        DateTime @map("expira_em")
+  criadoEm        DateTime @default(now()) @map("criado_em")
+  atualizadoEm    DateTime @updatedAt @map("atualizado_em")
+  cpf             String?
+  nome            String?
+  respostas       Json?
+  resultado       Json?
+  departamentCode String?  @map("departament_code")
 
   @@map("disc_links")
 }
 
 model User {
-  id        String   @id @default(uuid())
-  username  String   @unique
-  role      String
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id              String   @id @default(uuid())
+  username        String   @unique
+  role            String   @default("RH")
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  departamentCode String?  @map("departament_code")
+  empresaId       String?  @map("empresa_id") @db.VarChar
+  filialId        String?  @map("filial_id") @db.VarChar
 
   @@map("users")
 }

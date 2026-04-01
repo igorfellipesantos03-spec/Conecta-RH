@@ -1,14 +1,21 @@
 const { calcularDISC } = require('../services/discCalculator');
 const discLinkService = require('../services/discLinkService');
 
+const { Pool } = require('pg');
+const { PrismaPg } = require('@prisma/adapter-pg');
+const { PrismaClient } = require('@prisma/client');
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
+
 /**
- * Controller para lidar com a submissão e cálculo do teste DISC.
+ * Controller para lidar com a submissão e cálculo do teste DISC (sem persistência).
  */
 const calcularTeste = (req, res) => {
   try {
     const { respostas } = req.body;
 
-    // Validação básica
     if (!respostas || !Array.isArray(respostas) || respostas.length === 0) {
       return res.status(400).json({
         sucesso: false,
@@ -16,7 +23,6 @@ const calcularTeste = (req, res) => {
       });
     }
 
-    // Calcula os resultados usando o serviço
     const resultado = calcularDISC(respostas);
 
     return res.status(200).json({
@@ -33,16 +39,8 @@ const calcularTeste = (req, res) => {
   }
 };
 
-const { Pool } = require('pg');
-const { PrismaPg } = require('@prisma/adapter-pg');
-const { PrismaClient } = require('@prisma/client');
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
-
 /**
- * Controller para gerar token/link para o teste DISC
+ * Controller para gerar token/link para o teste DISC.
  */
 const generateLink = async (req, res) => {
   try {
@@ -74,7 +72,27 @@ const generateLink = async (req, res) => {
 };
 
 /**
- * Endpoint pré-validação: Obtém as configs do link sem expor IDs no frontend (e checa se é CPF ou Nome)
+ * Retorna todos os links DISC gerados, ordenados pelo mais recente.
+ * Filtra por empresa/filial do usuário logado (RH vê apenas sua empresa).
+ * ADMIN vê todos.
+ */
+const listarLinks = async (req, res) => {
+  try {
+    const { role, empresaId, filialId } = req.user;
+    const links = await discLinkService.listarLinks(role, empresaId, filialId);
+    return res.status(200).json({ sucesso: true, data: links });
+  } catch (error) {
+    console.error('Erro ao listar links DISC:', error);
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: 'Erro interno ao listar os links DISC.',
+      erro: error.message
+    });
+  }
+};
+
+/**
+ * Endpoint pré-validação: verifica se o link é válido e retorna suas configs.
  */
 const validateLink = async (req, res) => {
   try {
@@ -83,7 +101,6 @@ const validateLink = async (req, res) => {
       return res.status(404).send();
     }
 
-    // Utiliza a nova Máquina de Estados (Que inativa se expirado e evolui para PROGRESS se estiver PENDING)
     const discLink = await discLinkService.validarAcessoLink(token);
 
     return res.status(200).json({
@@ -93,34 +110,96 @@ const validateLink = async (req, res) => {
         status: discLink.status
       }
     });
-
   } catch (error) {
     console.error('Erro na validação do link:', error);
-    return res.status(404).send();
+    if (error.message.includes('expirado')) {
+      return res.status(410).json({ sucesso: false, mensagem: error.message });
+    }
+    return res.status(404).json({ sucesso: false, mensagem: 'Link inválido ou não encontrado.' });
   }
 };
 
 /**
- * Endpoint para Finalizar o Link após o término do teste.
- * Altera status para CONCLUDED.
+ * Registra nome e CPF do respondente e avança o status do link para PROGRESS.
+ * Chamado quando o candidato/colaborador clica em "Iniciar Teste".
+ */
+const iniciarTeste = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { nome, cpf } = req.body;
+
+    if (!token) {
+      return res.status(400).json({ sucesso: false, mensagem: 'Token não informado.' });
+    }
+
+    if (!nome || nome.trim() === '') {
+      return res.status(400).json({ sucesso: false, mensagem: 'O nome é obrigatório para iniciar o teste.' });
+    }
+
+    if (!cpf) {
+      return res.status(400).json({ sucesso: false, mensagem: 'O CPF é obrigatório para iniciar o teste.' });
+    }
+
+    // limpeza extra de CPF feita também no service, mas validamos o tamanho aqui
+    const cpfNumeros = cpf.replace(/\D/g, '');
+    if (cpfNumeros.length !== 11) {
+      return res.status(400).json({ sucesso: false, mensagem: 'CPF inválido. Informe os 11 dígitos.' });
+    }
+
+    const discLink = await discLinkService.iniciarTeste(token, nome.trim(), cpf);
+
+    return res.status(200).json({
+      sucesso: true,
+      mensagem: 'Teste iniciado com sucesso.',
+      dados: {
+        status: discLink.status
+      }
+    });
+  } catch (error) {
+    console.error('Erro ao iniciar teste DISC:', error);
+    const statusCode = error.message.includes('não encontrado') ? 404
+                     : error.message.includes('expirado')       ? 410
+                     : 500;
+    return res.status(statusCode).json({
+      sucesso: false,
+      mensagem: error.message,
+      erro: error.message
+    });
+  }
+};
+
+/**
+ * Finaliza o teste DISC: persiste respostas e resultado no banco e altera status para CONCLUDED.
+ * Também salva o departamentCode do respondente para habilitar o filtro do GESTOR.
  */
 const concluirTeste = async (req, res) => {
   try {
     const { token } = req.params;
-    if (!token) return res.status(400).json({ sucesso: false, mensagem: 'Token não informado.' });
+    const { respostas, resultado, departamentCode } = req.body;
 
-    await discLinkService.finalizarLink(token);
+    if (!token) {
+      return res.status(400).json({ sucesso: false, mensagem: 'Token não informado.' });
+    }
 
-    return res.status(200).json({ sucesso: true, mensagem: 'Link finalizado com sucesso.' });
+    // departamentCode é opcional (candidatos externos podem não ter)
+    await discLinkService.finalizarLink(token, respostas, resultado, departamentCode || null);
+
+    return res.status(200).json({ sucesso: true, mensagem: 'Teste concluído e resultados salvos com sucesso.' });
   } catch (error) {
     console.error('Erro ao finalizar o link:', error);
-    return res.status(500).json({ sucesso: false, mensagem: 'Erro interno ao finalizar link.', erro: error.message });
+    return res.status(500).json({
+      sucesso: false,
+      mensagem: 'Erro interno ao finalizar link.',
+      erro: error.message
+    });
   }
 };
 
 module.exports = {
   calcularTeste,
   generateLink,
+  listarLinks,
   validateLink,
+  iniciarTeste,
   concluirTeste
 };

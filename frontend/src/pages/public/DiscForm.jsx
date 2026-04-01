@@ -248,12 +248,17 @@ export default function DiscForm() {
         const response = await axios.get(`http://localhost:3001/api/disc/link/${token}`);
         if (response.data.sucesso) {
           setLinkContext(response.data.dados);
+          if (response.data.dados.status === 'EXPIRED') {
+            setIsObfuscatedError(true);
+            setLinkError('Este link do teste DISC já expirou ou foi utilizado.');
+          }
         } else {
           setLinkError(response.data.mensagem);
         }
       } catch (err) {
-        if (err.response && err.response.status === 404) {
+        if (err.response && (err.response.status === 404 || err.response.status === 410)) {
           setIsObfuscatedError(true);
+          setLinkError(err.response.data?.mensagem || 'Este link já expirou ou não existe.');
         } else {
           setLinkError('Erro ao consultar a validade do Link.');
         }
@@ -274,6 +279,16 @@ export default function DiscForm() {
       try {
         const response = await axios.get(`http://localhost:3001/api/employees/check-cpf/${cpf}?token=${token}`);
         if (response.data.sucesso) {
+          // Dispara também o POST pro nosso backend para registrar que iniciou (PROGRESS) e salvar o CPF/Nome
+          try {
+            await axios.post(`http://localhost:3001/api/disc/link/${token}/iniciar`, {
+              nome: response.data.dados.name || response.data.dados.nome || 'Funcionário',
+              cpf: cpf
+            });
+          } catch (err) {
+            console.warn('Erro ao atualizar status para PROGRESS:', err);
+          }
+
           setColaborador(response.data.dados);
           setIsUserValidated(true);
         } else {
@@ -297,8 +312,16 @@ export default function DiscForm() {
         setLoading(false);
         return;
       }
-      setColaborador({ nome: nomeCompleto, cpf: cpf });
-      setIsUserValidated(true);
+      try {
+        await axios.post(`http://localhost:3001/api/disc/link/${token}/iniciar`, {
+          nome: nomeCompleto.trim(),
+          cpf: cpf
+        });
+        setColaborador({ nome: nomeCompleto, cpf: cpf });
+        setIsUserValidated(true);
+      } catch (err) {
+        setError(err.response?.data?.mensagem || 'Erro ao iniciar o teste.');
+      }
       setLoading(false);
     }
   };
@@ -366,7 +389,11 @@ export default function DiscForm() {
 
       // Executa o POST para a API do backend sinalizando que o teste foi Finalizado (Status => CONCLUDED)
       try {
-        await axios.post(`http://localhost:3001/api/disc/link/${token}/finalizar`);
+        await axios.post(`http://localhost:3001/api/disc/link/${token}/finalizar`, {
+          respostas: Object.values(respostas),
+          resultado: resultados,
+          departamentCode: colaborador?.costCenterDescription
+        });
       } catch (err) {
         console.warn('Erro ao finalizar o link no banco:', err);
       }
@@ -389,17 +416,23 @@ export default function DiscForm() {
   // TELA DE AUTENTICAÇÃO / BOAS-VINDAS
   if (isObfuscatedError) {
     return (
-      <div style={{ backgroundColor: '#fff', height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', paddingTop: '8%', paddingLeft: '12%', fontFamily: 'sans-serif', color: '#202124' }}>
-        <div style={{ maxWidth: '600px' }}>
-          <h1 style={{ fontSize: '1.6em', fontWeight: 'normal', marginBottom: '16px' }}>Não é possível acessar esse site</h1>
-          <p style={{ marginBottom: '22px', lineHeight: '1.5' }}>
-            Não foi possível encontrar o endereço IP do servidor de <strong>{window.location.hostname}</strong>.
+      <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-6 text-gray-100 font-sans">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <h2 className="text-2xl font-bold text-white mb-3">Acesso Indisponível</h2>
+          <p className="text-gray-400 text-sm leading-relaxed mb-6">
+            {linkError || 'Este link já expirou, foi preenchido anteriormente ou não existe mais.'}
           </p>
-          <ul style={{ listStyleType: 'disc', paddingLeft: '22px', marginBottom: '32px', lineHeight: '1.8' }}>
-            <li>Verifique a conexão</li>
-            <li>Verifique o proxy e o firewall</li>
-          </ul>
-          <p style={{ color: '#70757a', fontSize: '0.9em' }}>ERR_NAME_NOT_RESOLVED</p>
+          <div className="pt-6 border-t border-gray-800">
+            <p className="text-xs text-gray-500">
+              Se você acredita que isso é um erro, por favor,<br />
+              entre em contato com o departamento de Recursos Humanos.
+            </p>
+          </div>
         </div>
       </div>
     );

@@ -1,7 +1,8 @@
-import { useState } from 'react';
-import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api from '../../services/api';
 
-// Lista de Empresas Holding (Mock Frontend)
+// Lista de Empresas Holding
 const empresasList = [
   { id: '07', label: 'Conasa Infraestrutura' },
   { id: '23', label: 'Águas de Itapema' },
@@ -26,8 +27,34 @@ const empresasList = [
 ];
 
 export default function DiscManager() {
+  const navigate = useNavigate();
   const [isEmployee, setIsEmployee] = useState(true);
-  const [companyId, setCompanyId] = useState('07'); // Default Conasa Infraestrutura
+
+  // ── Dados do usuário logado ─────────────────────
+  const [userRole, setUserRole] = useState('RH');
+  const [userEmpresaId, setUserEmpresaId] = useState('07');
+  const [userFilialId, setUserFilialId] = useState('01');
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('@ConectaRH:user');
+      if (stored) {
+        const user = JSON.parse(stored);
+        setUserRole(user.role || 'RH');
+        setUserEmpresaId(user.empresaId || '07');
+        setUserFilialId(user.filialId || '01');
+        // Para RH, inicializa com os dados fixos do usuário
+        if (user.role !== 'ADMIN') {
+          setCompanyId(user.empresaId || '07');
+          setBranchId(user.filialId || '01');
+        }
+      }
+    } catch { /* ignore */ }
+  }, []);
+
+  const isAdmin = userRole === 'ADMIN';
+
+  const [companyId, setCompanyId] = useState('07');
   const [branchId, setBranchId] = useState('01');
   
   const [loading, setLoading] = useState(false);
@@ -35,12 +62,10 @@ export default function DiscManager() {
   const [generatedLink, setGeneratedLink] = useState('');
   const [copySuccess, setCopySuccess] = useState(false);
 
-  // Regra de UI: Alterou empresa, verifica se precisa de branch manual
+  // Regra de UI: Alterou empresa, verifica se precisa de branch manual (ADMIN only)
   const handleCompanyChange = (e) => {
     const cid = e.target.value;
     setCompanyId(cid);
-    
-    // Volta a filial para 01 se nao for as excecoes, apenas como segurança / reset
     if (cid !== '31' && cid !== '43') {
       setBranchId('01');
     } else {
@@ -50,20 +75,18 @@ export default function DiscManager() {
 
   const handleGerarLink = async (e) => {
     e.preventDefault();
-    if (isEmployee && !companyId) return setError("Selecione a Empresa.");
-    if (isEmployee && (companyId === '31' || companyId === '43') && !branchId) return setError("Digite a Filial (Branch ID).");
+    if (!companyId) return setError("Selecione a Empresa.");
+    if ((companyId === '31' || companyId === '43') && !branchId) return setError("Digite a Filial (Branch ID).");
 
     setLoading(true);
     setError(null);
     setCopySuccess(false);
 
     try {
-      const response = await axios.post('http://localhost:3001/api/disc/generate-link', {
+      const response = await api.post('/disc/generate-link', {
         isEmployee,
-        // Se isEmployee for false, no back-end também será gravado o branch '01' e company '07' como padrao,
-        // mas a busca de protheus ignora por causa da flag
-        companyId: isEmployee ? companyId : '07',
-        branchId: isEmployee ? branchId : '01',
+        companyId: companyId,
+        branchId: branchId,
       });
 
       if (response.data.sucesso) {
@@ -86,12 +109,27 @@ export default function DiscManager() {
     }
   };
 
-  const needsBranchInput = companyId === '31' || companyId === '43';
+  // Para ADMIN: a empresa selecionada no dropdown determina a regra de filial
+  // Para RH: a empresa do usuário determina a regra de filial
+  const empresaAtual = isAdmin ? companyId : userEmpresaId;
+  const needsBranchInput = empresaAtual === '31' || empresaAtual === '43';
+  const empresaLabel = empresasList.find(e => e.id === userEmpresaId)?.label || `Empresa ${userEmpresaId}`;
 
   return (
     <div className="min-h-screen bg-gray-950 font-sans text-gray-100 p-6 lg:p-12">
       <div className="max-w-3xl mx-auto">
-        
+
+        {/* Botão Voltar ao Hub */}
+        <button
+          onClick={() => navigate('/rh/disc-hub')}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8 text-sm cursor-pointer"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Voltar ao Hub DISC
+        </button>
+
         {/* Header Intro */}
         <div className="mb-10">
           <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
@@ -134,53 +172,52 @@ export default function DiscManager() {
             </div>
           </div>
 
-          {/* Empresa e Filial (Somente se for Funcinario) */}
-          {isEmployee && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 border-t border-gray-800 pt-6">
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Empresa Holding *
-                </label>
-                <select
-                  value={companyId}
-                  onChange={handleCompanyChange}
-                  className="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
-                >
-                  {empresasList.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.id} - {emp.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Filial (Branch ID) *
-                </label>
-                {needsBranchInput ? (
-                  <input
-                    type="text"
-                    value={branchId}
-                    onChange={(e) => setBranchId(e.target.value)}
-                    placeholder="Ex: 02"
-                    required
-                    className="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
-                  />
-                ) : (
-                  <input
-                    type="text"
-                    value="01"
-                    disabled
-                    className="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 px-4 text-gray-500 cursor-not-allowed opacity-70"
-                  />
-                )}
-                <p className="text-xs text-gray-500 mt-2">
-                  {needsBranchInput ? "Esta empresa possui flexibilidade de filial." : "A filial padrão para esta empresa é 01."}
-                </p>
-              </div>
-
+          {/* Empresa e Filial (para todos os tipos de link) */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8 border-t border-gray-800 pt-6">
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Empresa Holding *
+              </label>
+              <select
+                value={companyId}
+                onChange={handleCompanyChange}
+                disabled={!isAdmin}
+                className={`w-full bg-gray-950 border border-gray-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-blue-500 transition-colors ${!isAdmin ? 'opacity-70 cursor-not-allowed text-gray-400' : ''}`}
+              >
+                {empresasList.map(emp => (
+                  <option key={emp.id} value={emp.id}>{emp.id} - {emp.label}</option>
+                ))}
+              </select>
             </div>
-          )}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-400 mb-2">
+                Filial (Branch ID) *
+              </label>
+              {needsBranchInput ? (
+                <input
+                  type="text"
+                  value={branchId}
+                  onChange={(e) => setBranchId(e.target.value)}
+                  placeholder="Ex: 02"
+                  required
+                  className="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 px-4 text-white focus:outline-none focus:border-blue-500 transition-colors"
+                />
+              ) : (
+                <input
+                  type="text"
+                  value={branchId}
+                  disabled
+                  className="w-full bg-gray-950 border border-gray-800 rounded-xl py-3 px-4 text-gray-500 cursor-not-allowed opacity-70"
+                />
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                {needsBranchInput ? "Esta empresa possui flexibilidade de filial." : "A filial padrão para esta empresa é 01."}
+              </p>
+            </div>
+
+          </div>
 
           {error && (
             <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">

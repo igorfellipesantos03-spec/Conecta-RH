@@ -1,10 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { DiscProfileAnalysis } from '../rh/DiscHub';
 
 export default function DiscResults() {
   const location = useLocation();
   const navigate = useNavigate();
-  
+
   const rawRes = location.state?.resultados;
 
   const ambienteNatural = rawRes?.natural || rawRes?.ambienteNatural || { D: 85, I: 60, S: 30, C: 20 };
@@ -27,7 +28,6 @@ export default function DiscResults() {
 
   const perfilMestre = rawRes?.perfilMestre || getPerfilName(ambienteNatural);
 
-  // Formata os dados para o Recharts
   const dataNatural = [
     { subject: 'D (Dominância)', A: ambienteNatural.D, fullMark: 100 },
     { subject: 'I (Influência)', A: ambienteNatural.I, fullMark: 100 },
@@ -43,34 +43,32 @@ export default function DiscResults() {
   ];
 
   const renderProgressBar = (label, percentage, colorClass) => (
-    <div className="mb-4">
+    <div className="mb-4" key={label}>
       <div className="flex justify-between items-end mb-1">
         <span className="text-sm font-semibold text-gray-200">{label}</span>
         <span className="text-sm text-gray-400 font-mono">{percentage}%</span>
       </div>
       <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-gray-700">
-        <div 
+        <div
           className={`h-2.5 rounded-full transition-all duration-1000 ${colorClass}`}
           style={{ width: `${percentage}%` }}
-        ></div>
+        />
       </div>
     </div>
   );
 
   return (
     <div className="min-h-screen bg-gray-950 font-sans text-gray-100">
-      
+
       {/* Header Fixo ConectaRH */}
       <header className="bg-blue-600 w-full sticky top-0 z-50 shadow-md">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-center">
-          <h1 className="text-white text-xl font-bold tracking-wide">
-            ConectaRH
-          </h1>
+          <h1 className="text-white text-xl font-bold tracking-wide">ConectaRH</h1>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-10">
-        
+
         {/* Bloco de Sucesso e Título */}
         <div className="mb-10 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-blue-500/10 mb-4">
@@ -92,17 +90,15 @@ export default function DiscResults() {
           </p>
         </div>
 
-        {/* Gráficos e Barras - Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          
-          {/* Coluna 1: Ambiente Natural */}
+        {/* Gráficos e Barras */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
+
+          {/* Ambiente Natural */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
             <div className="border-b border-gray-800 pb-4 mb-6">
               <h3 className="text-xl font-semibold text-white">Ambiente Natural</h3>
               <p className="text-sm text-gray-500 mt-1">Como você reage instintivamente, sob pressão ou na sua essência.</p>
             </div>
-            
-            {/* Gráfico Radar */}
             <div className="h-64 w-full mb-6">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={dataNatural}>
@@ -114,24 +110,18 @@ export default function DiscResults() {
                 </RadarChart>
               </ResponsiveContainer>
             </div>
-
-            {/* Barras de Progresso */}
-            <div>
-              {renderProgressBar('Dominância (D)', ambienteNatural.D, 'bg-red-500')}
-              {renderProgressBar('Influência (I)', ambienteNatural.I, 'bg-yellow-500')}
-              {renderProgressBar('Estabilidade (S)', ambienteNatural.S, 'bg-green-500')}
-              {renderProgressBar('Conformidade (C)', ambienteNatural.C, 'bg-blue-500')}
-            </div>
+            {renderProgressBar('Dominância (D)', ambienteNatural.D, 'bg-red-500')}
+            {renderProgressBar('Influência (I)', ambienteNatural.I, 'bg-yellow-500')}
+            {renderProgressBar('Estabilidade (S)', ambienteNatural.S, 'bg-green-500')}
+            {renderProgressBar('Conformidade (C)', ambienteNatural.C, 'bg-blue-500')}
           </div>
 
-          {/* Coluna 2: Ambiente Adaptado */}
+          {/* Ambiente Adaptado */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
             <div className="border-b border-gray-800 pb-4 mb-6">
               <h3 className="text-xl font-semibold text-white">Ambiente Adaptado</h3>
               <p className="text-sm text-gray-500 mt-1">Como você ajusta seu comportamento ao ambiente atual de trabalho.</p>
             </div>
-            
-            {/* Gráfico Radar */}
             <div className="h-64 w-full mb-6">
               <ResponsiveContainer width="100%" height="100%">
                 <RadarChart cx="50%" cy="50%" outerRadius="70%" data={dataAdaptado}>
@@ -143,21 +133,19 @@ export default function DiscResults() {
                 </RadarChart>
               </ResponsiveContainer>
             </div>
-
-            {/* Barras de Progresso */}
-            <div>
-              {renderProgressBar('Dominância (D)', ambienteAdaptado.D, 'bg-red-500')}
-              {renderProgressBar('Influência (I)', ambienteAdaptado.I, 'bg-yellow-500')}
-              {renderProgressBar('Estabilidade (S)', ambienteAdaptado.S, 'bg-green-500')}
-              {renderProgressBar('Conformidade (C)', ambienteAdaptado.C, 'bg-blue-500')}
-            </div>
+            {renderProgressBar('Dominância (D)', ambienteAdaptado.D, 'bg-red-500')}
+            {renderProgressBar('Influência (I)', ambienteAdaptado.I, 'bg-yellow-500')}
+            {renderProgressBar('Estabilidade (S)', ambienteAdaptado.S, 'bg-green-500')}
+            {renderProgressBar('Conformidade (C)', ambienteAdaptado.C, 'bg-blue-500')}
           </div>
-
         </div>
 
-        {/* Ações / Botões */}
-        <div className="flex justify-center">
-          <button 
+        {/* ── Análise do Perfil DISC ── */}
+        <DiscProfileAnalysis resultado={rawRes} />
+
+        {/* Botão */}
+        <div className="flex justify-center mt-10">
+          <button
             onClick={() => navigate('/')}
             className="bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 px-8 rounded-xl shadow-lg shadow-blue-500/25 transition-all hover:-translate-y-1 cursor-pointer"
           >
