@@ -1,5 +1,5 @@
 const express = require('express');
-const authMiddleware = require('../middlewares/authMiddleware');
+const { verifyToken } = require('../middlewares/authMiddleware');
 const checkRole = require('../middlewares/checkRoleMiddleware');
 const {
   calcularTeste,
@@ -7,7 +7,9 @@ const {
   listarLinks,
   validateLink,
   iniciarTeste,
-  concluirTeste
+  concluirTeste,
+  getMeuDisc,
+  vincularCpf
 } = require('../controllers/discController');
 
 const router = express.Router();
@@ -15,10 +17,16 @@ const router = express.Router();
 // ─── Rotas Autenticadas (HUB interno) ────────────────────────────────────────
 
 // GET  /api/disc/links — Lista os links para o DiscHub (filtrado por empresa/filial do usuário)
-router.get('/links', authMiddleware, checkRole('ADMIN', 'RH'), listarLinks);
+router.get('/links', verifyToken, checkRole('ADMIN', 'RH', 'GESTOR'), listarLinks);
 
 // POST /api/disc/generate-link — Gera novo link/token DISC (apenas ADMIN e RH)
-router.post('/generate-link', authMiddleware, checkRole('ADMIN', 'RH'), generateLink);
+router.post('/generate-link', verifyToken, checkRole('ADMIN', 'RH'), generateLink);
+
+// GET  /api/disc/meu-disc — Retorna o resultado DISC do próprio usuário logado
+router.get('/meu-disc', verifyToken, getMeuDisc);
+
+// POST /api/disc/vincular-cpf — Vincula o CPF digitado ao perfil do usuário no banco
+router.post('/vincular-cpf', verifyToken, vincularCpf);
 
 // ─── Rotas Públicas (tela do candidato/colaborador) ──────────────────────────
 

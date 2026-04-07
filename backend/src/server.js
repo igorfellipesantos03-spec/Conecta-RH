@@ -8,8 +8,12 @@ const app = express();
 
 require('./services/cronJobs'); // Inicia as tarefas em segundo plano
 
-// Middlewares
-app.use(cors());
+const origensPermitidas = process.env.FRONTEND_URL || '*';
+
+// Middlewares - Agora o CORS barra requisições que não venham do nosso IP/DNS oficial
+app.use(cors({
+  origin: origensPermitidas
+}));
 app.use(express.json());
 
 // Rota de status do servidor
@@ -26,11 +30,13 @@ const authMiddleware = require('./middlewares/authMiddleware');
 const discRoutes = require('./routes/discRoutes');
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
+const accessRoutes = require('./routes/accessRoutes');
 
 app.use('/api/disc', discRoutes);
 app.use('/api/auth', authRoutes);
 
 app.use('/api/users', authMiddleware, userRoutes);
+app.use('/api/access', accessRoutes);
 
 const { checkCpf } = require('./controllers/employeeController');
 app.get('/api/employees/check-cpf/:cpf', checkCpf);
@@ -107,5 +113,6 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Servidor ConectaRH rodando na porta ${PORT}`);
   console.log(`📡 Status: http://localhost:${PORT}/api/status`);
+  console.log(`🔒 Aceitando requisições apenas de: ${origensPermitidas}`);
   console.log(`🔍 Funcionários: http://localhost:${PORT}/api/funcionarios?busca=NOME`);
 });

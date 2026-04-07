@@ -28,7 +28,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:3001/api/auth/login', {
+      const response = await axios.post('http://192.168.0.144:3001/api/auth/login', {
         username,
         password
       });
@@ -38,7 +38,7 @@ export default function Login() {
         localStorage.setItem('@ConectaRH:access_token', response.data.access_token);
         localStorage.setItem('@ConectaRH:refresh_token', response.data.refresh_token);
         localStorage.setItem('@ConectaRH:user', JSON.stringify(response.data.user));
-        
+
         // Redireciona para o HUB (Home)
         navigate('/');
       }
@@ -57,10 +57,10 @@ export default function Login() {
     <div className="min-h-screen bg-gray-950 flex flex-col items-center justify-center p-4">
       {/* Logo Exclusiva Centralizada */}
       <div className="mb-8">
-        <img 
-          src="/logo.png" 
-          alt="ConectaRH" 
-          className="h-20 object-contain drop-shadow-[0_0_15px_rgba(0,86,210,0.5)]" 
+        <img
+          src="/logo.png"
+          alt="ConectaRH"
+          className="h-20 object-contain drop-shadow-[0_0_15px_rgba(0,86,210,0.5)]"
         />
       </div>
 
@@ -69,9 +69,13 @@ export default function Login() {
         {/* Glow sutil azul no topo do card */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#0056D2] to-transparent opacity-80" />
 
-        <div className="text-center mb-8">
-          <h2 className="text-2xl font-bold text-white tracking-tight">Login RH</h2>
-          <p className="text-gray-400 text-sm mt-1">Acesso exclusivo para Gestão de Pessoas</p>
+        <div className="text-center mb-8 flex flex-col items-center">
+          <span className="text-sm font-medium text-gray-400 tracking-wider uppercase">Login</span>
+          <div className="w-8 h-[2px] bg-blue-600 rounded-full my-2"></div>
+          <span className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 tracking-tight">
+            ConectaRH
+          </span>
+          <p className="text-gray-400 text-sm mt-1">Use suas credenciais do Protheus para acessar o Sistema</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-5">
@@ -120,18 +124,18 @@ export default function Login() {
             className="w-full flex justify-center items-center h-12 text-white bg-blue-600 hover:bg-blue-500 disabled:bg-[#0056D2]/50 disabled:cursor-not-allowed focus:ring-4 focus:outline-none focus:ring-blue-800 font-semibold rounded-lg text-sm px-5 py-2.5 text-center transition-all mt-6 shadow-[0_0_20px_rgba(0,86,210,0.3)] hover:shadow-[0_0_25px_rgba(0,86,210,0.5)]"
           >
             {isLoading ? (
-               <>
-                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                 Validando Acesso...
-               </>
+              <>
+                <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                Validando Acesso...
+              </>
             ) : (
-               'Entrar'
+              'Entrar'
             )}
           </button>
         </form>
 
       </div>
-      
+
       {/* Rodapé sutil */}
       <div className="mt-8 text-xs text-gray-600">
         &copy; {new Date().getFullYear()} Conasa Infraestrutura S.A.

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, BookOpen, FileCheck, LogOut, UserPlus, X, Shield } from 'lucide-react';
+import { Home, BookOpen, FileCheck, LogOut, UserPlus, X, Shield, ShieldCheck, User } from 'lucide-react';
 import api from '../services/api';
 
 // Lista de Empresas da Holding
@@ -45,8 +45,10 @@ function RoleBadge({ role }) {
   const styles = {
     ADMIN:  'bg-purple-500/15 text-purple-400 border-purple-500/25',
     RH:     'bg-blue-500/15   text-blue-400   border-blue-500/25',
+    GESTOR: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25',
+    USER:   'bg-gray-500/15   text-gray-400   border-gray-500/25',
   };
-  const labels = { ADMIN: 'Administrador', RH: 'Recursos Humanos' };
+  const labels = { ADMIN: 'Administrador', RH: 'Recursos Humanos', GESTOR: 'Gestor', USER: 'Colaborador' };
   return (
     <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${styles[role] || 'bg-gray-700 text-gray-400'}`}>
       {labels[role] || role}
@@ -63,13 +65,14 @@ export default function Sidebar() {
   const ROLE_MAP = {
     'ADMIN': 'ADMIN',
     'RH': 'RH',
+    'GESTOR': 'GESTOR',
+    'USER': 'USER',
     // valores antigos do banco:
     'TI': 'ADMIN',
     'Recursos Humanos': 'RH',
     'recursos humanos': 'RH',
-    'GESTOR': 'RH', // migração automática: GESTOR → RH
   };
-  const userRole = ROLE_MAP[rawRole] || 'RH';
+  const userRole = ROLE_MAP[rawRole] || 'USER';
 
   // Modal de Adicionar Usuário
   const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
@@ -80,6 +83,28 @@ export default function Sidebar() {
   const [newFilialId, setNewFilialId] = useState('01');
   const [addMessage, setAddMessage] = useState(null);
   const [loadingAdd, setLoadingAdd] = useState(false);
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0);
+
+  // Busca a quantidade de aprovações pendentes (se for ADMIN ou RH)
+  useEffect(() => {
+    if (userRole === 'ADMIN' || userRole === 'RH') {
+      const fetchPending = async () => {
+        try {
+          const res = await api.get('/access/requests');
+          if (res.data.success) {
+            const pending = (res.data.data || []).filter(r => r.status === 'PENDING');
+            setPendingApprovalsCount(pending.length);
+          }
+        } catch (e) {
+          // Silent fail on badge info
+        }
+      };
+      fetchPending();
+      
+      const interval = setInterval(fetchPending, 30000); // refresh every 30s
+      return () => clearInterval(interval);
+    }
+  }, [userRole]);
 
   // Empresas que precisam de filial manual
   const needsBranchInput = newEmpresaId === '31' || newEmpresaId === '43';
@@ -138,9 +163,12 @@ export default function Sidebar() {
 
   // ── Itens do menu filtrados por role ──────────────────────────────
   const allNavItems = [
-    { name: 'Hub Principal',  path: '/',              icon: <Home      className="w-5 h-5" />, roles: ['ADMIN','RH'] },
-    { name: 'Treinamentos',   path: '/em-desenvolvimento',  icon: <BookOpen  className="w-5 h-5" />, roles: ['ADMIN','RH'] },
-    { name: 'Gerador DISC',   path: '/rh/disc-manager', icon: <FileCheck className="w-5 h-5" />, roles: ['ADMIN','RH'] }
+    { name: 'Hub Principal',  path: '/',                    icon: <Home        className="w-5 h-5" />, roles: ['ADMIN','RH','GESTOR','USER'] },
+    { name: 'Meu DISC',       path: '/rh/meu-disc',         icon: <User        className="w-5 h-5" />, roles: ['ADMIN','RH','GESTOR','USER'] },
+    { name: 'Treinamentos',   path: '/em-desenvolvimento',  icon: <BookOpen    className="w-5 h-5" />, roles: ['ADMIN','RH'] },
+    { name: 'Gerador DISC',   path: '/rh/disc-manager',     icon: <FileCheck   className="w-5 h-5" />, roles: ['ADMIN','RH'] },
+    { name: 'DISC da Equipe', path: '/rh/disc-hub',         icon: <FileCheck   className="w-5 h-5" />, roles: ['GESTOR'] },
+    { name: 'Aprovações',     path: '/rh/access-approvals', icon: <ShieldCheck className="w-5 h-5" />, roles: ['ADMIN','RH'] }
   ];
   const navItems = allNavItems.filter(i => i.roles.includes(userRole));
 
@@ -164,14 +192,22 @@ export default function Sidebar() {
             to={item.path}
             end={item.path === '/'}
             className={({ isActive }) =>
-              `flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-all ${isActive
+              `flex items-center justify-between px-3 py-2.5 rounded-lg font-medium transition-all ${isActive
                 ? 'bg-blue-600/10 text-blue-500 hover:bg-blue-600/20'
                 : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/60'
               }`
             }
           >
-            {item.icon}
-            {item.name}
+            <div className="flex items-center gap-3">
+              {item.icon}
+              {item.name}
+            </div>
+            
+            {item.name === 'Aprovações' && pendingApprovalsCount > 0 && (
+              <span className="flex items-center justify-center min-w-[20px] h-5 rounded-full bg-red-600 shadow-[0_0_8px_rgba(220,38,38,0.6)] text-white text-[10px] font-bold animate-pulse px-1.5 leading-none mt-0.5">
+                {pendingApprovalsCount}
+              </span>
+            )}
           </NavLink>
         ))}
 

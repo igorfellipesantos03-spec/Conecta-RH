@@ -103,9 +103,29 @@ export default function DiscManager() {
 
   const handleCopy = () => {
     if (generatedLink) {
-      navigator.clipboard.writeText(generatedLink);
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 3000);
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(generatedLink);
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 3000);
+      } else {
+        // Fallback para HTTP (sem HTTPS) e contexto inseguro (ex: IP local)
+        const textArea = document.createElement("textarea");
+        textArea.value = generatedLink;
+        textArea.style.position = "fixed";
+        textArea.style.left = "-999999px";
+        textArea.style.top = "-999999px";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+          document.execCommand('copy');
+          setCopySuccess(true);
+          setTimeout(() => setCopySuccess(false), 3000);
+        } catch (err) {
+          console.error('Falha ao copiar:', err);
+        }
+        document.body.removeChild(textArea);
+      }
     }
   };
 

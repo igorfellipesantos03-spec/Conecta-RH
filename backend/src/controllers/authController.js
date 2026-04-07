@@ -15,19 +15,64 @@ exports.login = async (req, res) => {
   try {
     const normalizedUsername = username.toLowerCase().trim();
 
-    // 1. Verifica se o usuário tem acesso ao ConectaRH (tabela users)
-    let user = null;
+    // 1. Autenticar no Protheus — se falhar, continua sem token (login local)
+    let protheusAccessToken = null;
     try {
-      user = await prisma.user.findUnique({
-        where: { username: normalizedUsername }
+      const protheusData = await getProtheusTokenDynamic(username, password);
+      protheusAccessToken = protheusData.access_token;
+    } catch (err) {
+      const status = err.response?.status;
+      if (status === 401 || status === 403) {
+        return res.status(401).json({ error: 'Usuário ou senha incorretos.' });
+      }
+      console.warn('Protheus indisponível, prosseguindo sem token:', err.message);
+    }
+
+    // protheusAccessToken already set from earlier block
+
+    // 2. JIT: Busca ou cria o usuário no banco (auto-cadastro)
+    let user;
+    try {
+      // Primeiro tenta obter o CPF do Protheus usando o token obtido no login
+      const protheusService = require('../services/protheusService');
+      let cpf = null;
+      if (protheusAccessToken) {
+        try {
+          const funcionarios = await protheusService.buscarFuncionarios(protheusAccessToken, normalizedUsername, null, null);
+          if (Array.isArray(funcionarios) && funcionarios.length > 0) {
+            cpf = funcionarios[0].cpf || null;
+          }
+        } catch (e) {
+          console.warn('Não foi possível buscar CPF no Protheus:', e.message);
+        }
+      }
+
+      user = await prisma.user.upsert({
+        where: { username: normalizedUsername },
+        update: { ...(cpf && { cpf }) }, // Atualiza CPF caso tenha sido encontrado
+        create: {
+          username: normalizedUsername,
+          role: 'USER',
+          ...(cpf && { cpf })
+          // empresaId, filialId ficam null — serão preenchidos depois
+        }
       });
     } catch (e) {
-      console.warn('Prisma client fallback acionado:', e.message);
+      console.warn('Prisma upsert fallback:', e.message);
+      // Fallback direto via pg se prisma falhar
       const { Pool } = require('pg');
       const pool = new Pool({ connectionString: process.env.DATABASE_URL });
       const result = await pool.query('SELECT * FROM users WHERE username = $1', [normalizedUsername]);
-      user = result.rows[0];
-      // Mapeia snake_case para camelCase
+      if (result.rows.length === 0) {
+        await pool.query(
+          "INSERT INTO users (id, username, role, created_at, updated_at) VALUES (gen_random_uuid(), $1, 'USER', NOW(), NOW())",
+          [normalizedUsername]
+        );
+        const inserted = await pool.query('SELECT * FROM users WHERE username = $1', [normalizedUsername]);
+        user = inserted.rows[0];
+      } else {
+        user = result.rows[0];
+      }
       if (user) {
         user.empresaId = user.empresa_id;
         user.filialId = user.filial_id;
@@ -36,35 +81,20 @@ exports.login = async (req, res) => {
       await pool.end();
     }
 
-    if (!user || !user.active) {
+    // 3. Se o usuário foi desativado pelo ADMIN, bloqueia
+    if (user && user.active === false) {
       return res.status(403).json({
-        error: 'Acesso Negado: Seu usuário não tem permissão para acessar o sistema ou está inativo.'
+        error: 'Acesso Negado: Seu usuário foi desativado pelo administrador.'
       });
     }
 
-    // 2. Autenticar no Protheus com as credenciais individuais do usuário
-    let protheusData;
-    try {
-      protheusData = await getProtheusTokenDynamic(username, password);
-    } catch (err) {
-      return res.status(401).json({ error: 'Usuário ou senha incorretos.' });
-    }
-
-    const protheusAccessToken = protheusData.access_token;
-
-    // 3. SEGURANÇA: Armazenar o token Protheus SOMENTE no backend (SessionStore)
-    //    O frontend NUNCA receberá este token.
+    // 4. SEGURANÇA: Armazenar o token Protheus SOMENTE no backend (SessionStore)
     sessionStore.set(normalizedUsername, protheusAccessToken);
 
-    // 4. Buscar nome oficial no Protheus para o Dashboard (Fallback para nome formatado)
-    let officialName = normalizedUsername.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
+    // 5. Nome formatado a partir do username
+    let officialName = user?.name || normalizedUsername.split('.').map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(' ');
 
-    // Nota: busca de nome desabilitada temporariamente — usaria token do usuário
-    // mas pode causar erro se o endpoint não estiver disponível.
-    // O nome formatado do username é suficiente para a saudação no dashboard.
-
-    // 5. Monta o payload do JWT do ConectaRH
-    //    ATENÇÃO: NÃO incluir protheusToken aqui — ele fica só no sessionStore
+    // 6. Monta o payload do JWT do ConectaRH
     const userRole = user.role;
     const userDeptCode = user.departamentCode || null;
     const userEmpresaId = user.empresaId || null;
@@ -77,12 +107,11 @@ exports.login = async (req, res) => {
       departamentCode: userDeptCode,
       empresaId: userEmpresaId,
       filialId: userFilialId
-      // protheusToken: NÃO incluído — armazenado apenas no sessionStore
     };
 
     const token = jwt.sign(sessionPayload, JWT_SECRET, { expiresIn: '15m' });
 
-    // 6. Resposta: JWT próprio + dados públicos do usuário
+    // 7. Resposta: JWT próprio + dados públicos do usuário
     return res.status(200).json({
       success: true,
       access_token: token,

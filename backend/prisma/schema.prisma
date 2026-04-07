@@ -72,16 +72,80 @@ model DiscLink {
   @@map("disc_links")
 }
 
+enum Role {
+  USER
+  GESTOR
+  RH
+  ADMIN
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
-  id              String   @id @default(uuid())
-  username        String   @unique
-  role            String   @default("RH")
-  active          Boolean  @default(true)
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
-  departamentCode String?  @map("departament_code")
-  empresaId       String?  @map("empresa_id") @db.VarChar
-  filialId        String?  @map("filial_id") @db.VarChar
+  id              String            @id @default(uuid())
+  username        String            @unique
+  cpf             String?           @unique
+  name            String?
+  role            Role              @default(USER)
+  active          Boolean           @default(true)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+  departamentCode String?           @map("departament_code")
+  empresaId       String?           @map("empresa_id") @db.VarChar
+  filialId        String?           @map("filial_id") @db.VarChar
+
+  managedDepts    ManagerDepartment[]
+  accessRequests  AccessRequest[]
 
   @@map("users")
+}
+
+// Vínculos Oficiais (Solução 1)
+model ManagerDepartment {
+  id             String @id @default(uuid())
+  userId         String @map("user_id")
+  departmentCode String @map("department_code")
+  departmentName String @map("department_name")
+  
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, departmentCode])
+  @@map("manager_departments")
+}
+
+// Fila de Aprovação (Solução 2)
+model AccessRequest {
+  id                 String        @id @default(uuid())
+  userId             String        @map("user_id")
+  requestedDepts     Json          @map("requested_depts") // Array de objetos: [{ code: "001", name: "T.I." }]
+  status             RequestStatus @default(PENDING)
+  justification      String?
+  requestedEmpresaId String?       @map("requested_empresa_id")
+  requestedFilialId  String?       @map("requested_filial_id")
+  
+  user               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt          DateTime      @default(now()) @map("created_at")
+  resolvedAt         DateTime?     @map("resolved_at")
+  resolvedBy         String?       @map("resolved_by") // Id do Admin
+
+  @@map("access_requests")
+}
+
+// Cache de Centros de Custo — populado organicamente quando DISCs são concluídos
+model CostCenter {
+  id                    String   @id @default(uuid())
+  costCenterCode        String   @map("cost_center_code")
+  costCenterDescription String   @map("cost_center_description")
+  empresaId             String   @map("empresa_id")
+  filialId              String   @map("filial_id")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+
+  @@unique([costCenterCode, empresaId, filialId])
+  @@map("cost_centers")
 }

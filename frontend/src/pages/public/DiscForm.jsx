@@ -2,221 +2,253 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
+/**
+ * Mapeamento oficial DISC baseado na planilha de cálculo.
+ * Cada questão tem mapeamentos DIFERENTES para MAIS e MENOS.
+ * '-' significa que aquela alternativa NÃO pontua nada (é descartada do cálculo).
+ */
+export const DISC_MAPPING = {
+  1:  { MAIS: { A: 'S', B: 'I', C: 'C', D: '-' }, MENOS: { A: 'D', B: '-', C: 'S', D: 'C' } },
+  2:  { MAIS: { A: 'I', B: 'S', C: 'D', D: '-' }, MENOS: { A: 'C', B: 'S', C: 'D', D: 'I' } },
+  3:  { MAIS: { A: '-', B: 'D', C: 'S', D: 'I' }, MENOS: { A: '-', B: 'D', C: 'C', D: 'I' } },
+  4:  { MAIS: { A: '-', B: 'S', C: 'D', D: 'I' }, MENOS: { A: '-', B: 'C', C: 'D', D: 'I' } },
+  5:  { MAIS: { A: 'I', B: 'C', C: 'D', D: 'S' }, MENOS: { A: '-', B: 'C', C: 'D', D: 'S' } },
+  6:  { MAIS: { A: 'D', B: 'S', C: 'I', D: 'C' }, MENOS: { A: 'D', B: 'S', C: '-', D: 'C' } },
+  7:  { MAIS: { A: '-', B: 'S', C: 'D', D: 'I' }, MENOS: { A: 'C', B: 'S', C: 'D', D: '-' } },
+  8:  { MAIS: { A: 'D', B: 'I', C: 'S', D: 'C' }, MENOS: { A: 'D', B: 'I', C: '-', D: 'C' } },
+  9:  { MAIS: { A: 'I', B: 'S', C: 'D', D: 'C' }, MENOS: { A: 'I', B: 'S', C: '-', D: 'C' } },
+  10: { MAIS: { A: 'D', B: 'S', C: 'I', D: 'C' }, MENOS: { A: 'D', B: '-', C: 'I', D: 'C' } },
+  11: { MAIS: { A: 'I', B: '-', C: 'C', D: 'D' }, MENOS: { A: 'I', B: 'S', C: 'C', D: 'D' } },
+  12: { MAIS: { A: 'C', B: 'D', C: 'S', D: 'I' }, MENOS: { A: 'C', B: 'D', C: 'S', D: '-' } },
+  13: { MAIS: { A: 'D', B: '-', C: 'S', D: 'C' }, MENOS: { A: 'D', B: 'I', C: 'S', D: 'C' } },
+  14: { MAIS: { A: 'C', B: 'D', C: 'S', D: 'I' }, MENOS: { A: 'C', B: 'D', C: 'I', D: 'S' } },
+  15: { MAIS: { A: 'S', B: 'I', C: 'C', D: 'D' }, MENOS: { A: '-', B: 'I', C: 'C', D: 'D' } },
+  16: { MAIS: { A: 'D', B: 'I', C: 'C', D: '-' }, MENOS: { A: 'D', B: 'I', C: 'S', D: 'C' } },
+  17: { MAIS: { A: 'C', B: 'I', C: 'S', D: 'D' }, MENOS: { A: 'C', B: '-', C: 'S', D: 'D' } },
+  18: { MAIS: { A: 'C', B: 'S', C: 'I', D: 'D' }, MENOS: { A: 'C', B: 'S', C: '-', D: 'D' } },
+  19: { MAIS: { A: 'S', B: 'D', C: 'I', D: 'C' }, MENOS: { A: '-', B: 'D', C: 'I', D: 'C' } },
+  20: { MAIS: { A: 'D', B: '-', C: 'S', D: 'I' }, MENOS: { A: 'D', B: 'C', C: 'S', D: 'I' } },
+  21: { MAIS: { A: 'I', B: 'S', C: 'D', D: 'C' }, MENOS: { A: 'I', B: 'S', C: 'D', D: '-' } },
+  22: { MAIS: { A: 'I', B: 'C', C: 'D', D: 'S' }, MENOS: { A: 'I', B: 'C', C: 'D', D: '-' } },
+  23: { MAIS: { A: 'I', B: 'C', C: 'D', D: 'S' }, MENOS: { A: 'I', B: 'C', C: 'D', D: '-' } },
+  24: { MAIS: { A: 'D', B: 'I', C: 'S', D: 'C' }, MENOS: { A: 'D', B: 'I', C: '-', D: 'C' } },
+};
+
 export const questoesDISC = [
   {
     pergunta: 1,
     opcoes: [
-      { id: 'A', letra: 'S', texto: 'amável, gentil' },
-      { id: 'B', letra: 'I', texto: 'persuasivo, convincente' },
-      { id: 'C', letra: 'C', texto: 'humilde, reservado, modesto' },
-      { id: 'D', letra: 'D', texto: 'original, inovador, diferente' },
+      { id: 'A', texto: 'amável, gentil' },
+      { id: 'B', texto: 'persuasivo, convincente' },
+      { id: 'C', texto: 'humilde, reservado, modesto' },
+      { id: 'D', texto: 'original, inovador, diferente' },
     ]
   },
   {
     pergunta: 2,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'atrativo, simpático, agradável para os demais' },
-      { id: 'B', letra: 'S', texto: 'cooperativo, está de acordo com freqüência' },
-      { id: 'C', letra: 'D', texto: 'teimoso, tenaz, combativo' },
-      { id: 'D', letra: 'C', texto: 'doce, complacente' },
+      { id: 'A', texto: 'atrativo, simpático, agradável para os demais' },
+      { id: 'B', texto: 'cooperativo, está de acordo com freqüência' },
+      { id: 'C', texto: 'teimoso, tenaz, combativo' },
+      { id: 'D', texto: 'doce, complacente' },
     ]
   },
   {
     pergunta: 3,
     opcoes: [
-      { id: 'A', letra: 'D', texto: 'facilmente lidera, independente' },
-      { id: 'B', letra: 'I', texto: 'divertido, adora dar risadas' },
-      { id: 'C', letra: 'S', texto: 'leal, aapegado' },
-      { id: 'D', letra: 'C', texto: 'encantador, doce' },
+      { id: 'A', texto: 'facilmente lidera, independente' },
+      { id: 'B', texto: 'divertido, adora dar risadas' },
+      { id: 'C', texto: 'leal, aapegado' },
+      { id: 'D', texto: 'encantador, doce' },
     ]
   },
   {
     pergunta: 4,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'mente aberta, receptivo' },
-      { id: 'B', letra: 'S', texto: 'reconhecido pelos demais, gosta de ajudar' },
-      { id: 'C', letra: 'D', texto: 'voluntarioso, caráter forte e decidido' },
-      { id: 'D', letra: 'C', texto: 'alegre, divertido' },
+      { id: 'A', texto: 'mente aberta, receptivo' },
+      { id: 'B', texto: 'reconhecido pelos demais, gosta de ajudar' },
+      { id: 'C', texto: 'voluntarioso, caráter forte e decidido' },
+      { id: 'D', texto: 'alegre, divertido' },
     ]
   },
   {
     pergunta: 5,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'jovial, gosta de alegrar as pessoas' },
-      { id: 'B', letra: 'C', texto: 'preciso, exato' },
-      { id: 'C', letra: 'D', texto: 'decidido, determinado, audaz' },
-      { id: 'D', letra: 'S', texto: 'estável, de temperamento tranqüilo, calmo' },
+      { id: 'A', texto: 'jovial, gosta de alegrar as pessoas' },
+      { id: 'B', texto: 'preciso, exato' },
+      { id: 'C', texto: 'decidido, determinado, audaz' },
+      { id: 'D', texto: 'estável, de temperamento tranqüilo, calmo' },
     ]
   },
   {
     pergunta: 6,
     opcoes: [
-      { id: 'A', letra: 'D', texto: 'competitivo, busca ganhar' },
-      { id: 'B', letra: 'S', texto: 'carinhoso, tem muito tato' },
-      { id: 'C', letra: 'I', texto: 'extrovertido, gosta de divertir-se' },
-      { id: 'D', letra: 'C', texto: 'harmonioso, busca o acordo' },
+      { id: 'A', texto: 'competitivo, busca ganhar' },
+      { id: 'B', texto: 'carinhoso, tem muito tato' },
+      { id: 'C', texto: 'extrovertido, gosta de divertir-se' },
+      { id: 'D', texto: 'harmonioso, busca o acordo' },
     ]
   },
   {
     pergunta: 7,
     opcoes: [
-      { id: 'A', letra: 'C', texto: 'exigente, difícil de satisfazer' },
-      { id: 'B', letra: 'S', texto: 'obediente, faz o que lhe pedem que faça, comedido' },
-      { id: 'C', letra: 'D', texto: 'tenaz e decidido, determinado' },
-      { id: 'D', letra: 'I', texto: 'brincalhão, divertido' },
+      { id: 'A', texto: 'exigente, difícil de satisfazer' },
+      { id: 'B', texto: 'obediente, faz o que lhe pedem que faça, comedido' },
+      { id: 'C', texto: 'tenaz e decidido, determinado' },
+      { id: 'D', texto: 'brincalhão, divertido' },
     ]
   },
   {
     pergunta: 8,
     opcoes: [
-      { id: 'A', letra: 'D', texto: 'valente, temerário, cheio de coragem' },
-      { id: 'B', letra: 'I', texto: 'inspirador, estimulante, motivador' },
-      { id: 'C', letra: 'S', texto: 'obediente, não confronta, cede facilmente' },
-      { id: 'D', letra: 'C', texto: 'tímido, apreensivo, calado' },
+      { id: 'A', texto: 'valente, temerário, cheio de coragem' },
+      { id: 'B', texto: 'inspirador, estimulante, motivador' },
+      { id: 'C', texto: 'obediente, não confronta, cede facilmente' },
+      { id: 'D', texto: 'tímido, apreensivo, calado' },
     ]
   },
   {
     pergunta: 9,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'sociável, desfruta da companhia dos outros' },
-      { id: 'B', letra: 'S', texto: 'paciente, estável, tolerante' },
-      { id: 'C', letra: 'D', texto: 'auto-suficiente, independente' },
-      { id: 'D', letra: 'C', texto: 'reservado' },
+      { id: 'A', texto: 'sociável, desfruta da companhia dos outros' },
+      { id: 'B', texto: 'paciente, estável, tolerante' },
+      { id: 'C', texto: 'auto-suficiente, independente' },
+      { id: 'D', texto: 'reservado' },
     ]
   },
   {
     pergunta: 10,
     opcoes: [
-      { id: 'A', letra: 'D', texto: 'aventureiro, desejoso de arriscar-se' },
-      { id: 'B', letra: 'S', texto: 'receptivo, aberto a sugestões' },
-      { id: 'C', letra: 'I', texto: 'cordial, cálido, amistoso' },
-      { id: 'D', letra: 'C', texto: 'moderado, evita os extremos' },
+      { id: 'A', texto: 'aventureiro, desejoso de arriscar-se' },
+      { id: 'B', texto: 'receptivo, aberto a sugestões' },
+      { id: 'C', texto: 'cordial, cálido, amistoso' },
+      { id: 'D', texto: 'moderado, evita os extremos' },
     ]
   },
   {
     pergunta: 11,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'expressivo, fala muito' },
-      { id: 'B', letra: 'S', texto: 'controlado, pouco expressivo' },
-      { id: 'C', letra: 'C', texto: 'convencional, sistemático, gosta da rotina' },
-      { id: 'D', letra: 'D', texto: 'decidido, certo, firme ao tomar decisões' },
+      { id: 'A', texto: 'expressivo, fala muito' },
+      { id: 'B', texto: 'controlado, pouco expressivo' },
+      { id: 'C', texto: 'convencional, sistemático, gosta da rotina' },
+      { id: 'D', texto: 'decidido, certo, firme ao tomar decisões' },
     ]
   },
   {
     pergunta: 12,
     opcoes: [
-      { id: 'A', letra: 'C', texto: 'refinado, elegante ao falar' },
-      { id: 'B', letra: 'D', texto: 'busca desafios, assume riscos' },
-      { id: 'C', letra: 'S', texto: 'diplomático, tem tato com as pessoas' },
-      { id: 'D', letra: 'I', texto: 'satisfeito, contente, confortável' },
+      { id: 'A', texto: 'refinado, elegante ao falar' },
+      { id: 'B', texto: 'busca desafios, assume riscos' },
+      { id: 'C', texto: 'diplomático, tem tato com as pessoas' },
+      { id: 'D', texto: 'satisfeito, contente, confortável' },
     ]
   },
   {
     pergunta: 13,
     opcoes: [
-      { id: 'A', letra: 'D', texto: 'agressivo, desafiante, enfocado na ação ou objetivo' },
-      { id: 'B', letra: 'I', texto: 'alma da festa, divertido, extrovertido' },
-      { id: 'C', letra: 'S', texto: 'ingênuo, é fácil que se aproveitem dele' },
-      { id: 'D', letra: 'C', texto: 'temeroso, tende a preocupar-se muito' },
+      { id: 'A', texto: 'agressivo, desafiante, enfocado na ação ou objetivo' },
+      { id: 'B', texto: 'alma da festa, divertido, extrovertido' },
+      { id: 'C', texto: 'ingênuo, é fácil que se aproveitem dele' },
+      { id: 'D', texto: 'temeroso, tende a preocupar-se muito' },
     ]
   },
   {
     pergunta: 14,
     opcoes: [
-      { id: 'A', letra: 'C', texto: 'cuidadoso, desconfiado, cauteloso' },
-      { id: 'B', letra: 'D', texto: 'determinado, decidido, não desiste, se põe firme' },
-      { id: 'C', letra: 'I', texto: 'convincente, transmite segurança' },
-      { id: 'D', letra: 'S', texto: 'de bom caráter, cortês, gosta de satisfazer os demais' },
+      { id: 'A', texto: 'cuidadoso, desconfiado, cauteloso' },
+      { id: 'B', texto: 'determinado, decidido, não desiste, se põe firme' },
+      { id: 'C', texto: 'convincente, transmite segurança' },
+      { id: 'D', texto: 'de bom caráter, cortês, gosta de satisfazer os demais' },
     ]
   },
   {
     pergunta: 15,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'entusiasta, se envolve com o que faz' },
-      { id: 'B', letra: 'D', texto: 'impaciente, ansioso, desesperado às vezes' },
-      { id: 'C', letra: 'S', texto: 'amistoso, consegue acordos, aceita' },
-      { id: 'D', letra: 'C', texto: 'animado, vivaz, entusiasta' },
+      { id: 'A', texto: 'entusiasta, se envolve com o que faz' },
+      { id: 'B', texto: 'impaciente, ansioso, desesperado às vezes' },
+      { id: 'C', texto: 'amistoso, consegue acordos, aceita' },
+      { id: 'D', texto: 'animado, vivaz, entusiasta' },
     ]
   },
   {
     pergunta: 16,
     opcoes: [
-      { id: 'A', letra: 'D', texto: 'tem autoconfiança, crê em si mesmo, seguro' },
-      { id: 'B', letra: 'S', texto: 'compreensivo, compassivo, apoiador das pessoas' },
-      { id: 'C', letra: 'C', texto: 'tolerante' },
-      { id: 'D', letra: 'I', texto: 'assertivo, agressivo, direto' },
+      { id: 'A', texto: 'tem autoconfiança, crê em si mesmo, seguro' },
+      { id: 'B', texto: 'compreensivo, compassivo, apoiador das pessoas' },
+      { id: 'C', texto: 'tolerante' },
+      { id: 'D', texto: 'assertivo, agressivo, direto' },
     ]
   },
   {
     pergunta: 17,
     opcoes: [
-      { id: 'A', letra: 'C', texto: 'muito disciplinado, auto controlado' },
-      { id: 'B', letra: 'S', texto: 'generoso, gosta de compartilhar' },
-      { id: 'C', letra: 'I', texto: 'animado, expressivo, usa muitos gestos' },
-      { id: 'D', letra: 'D', texto: 'persistente, não volta atrás, se nega a perder' },
+      { id: 'A', texto: 'muito disciplinado, auto controlado' },
+      { id: 'B', texto: 'generoso, gosta de compartilhar' },
+      { id: 'C', texto: 'animado, expressivo, usa muitos gestos' },
+      { id: 'D', texto: 'persistente, não volta atrás, se nega a perder' },
     ]
   },
   {
     pergunta: 18,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'admirável, digno de reconhecimento' },
-      { id: 'B', letra: 'S', texto: 'amável, desejoso de ajudar e de compartilhar' },
-      { id: 'C', letra: 'C', texto: 'resignado, desiste, não luta' },
-      { id: 'D', letra: 'D', texto: 'caráter forte, poderoso' },
+      { id: 'A', texto: 'admirável, digno de reconhecimento' },
+      { id: 'B', texto: 'amável, desejoso de ajudar e de compartilhar' },
+      { id: 'C', texto: 'resignado, desiste, não luta' },
+      { id: 'D', texto: 'caráter forte, poderoso' },
     ]
   },
   {
     pergunta: 19,
     opcoes: [
-      { id: 'A', letra: 'S', texto: 'respeitoso, trata as pessoas com consideração' },
-      { id: 'B', letra: 'D', texto: 'pioneiro, explorador, inovador' },
-      { id: 'C', letra: 'I', texto: 'otimista, vê o lado positivo de tudo' },
-      { id: 'D', letra: 'C', texto: 'se acomoda, complacente, pronto para ajudar' },
+      { id: 'A', texto: 'respeitoso, trata as pessoas com consideração' },
+      { id: 'B', texto: 'pioneiro, explorador, inovador' },
+      { id: 'C', texto: 'otimista, vê o lado positivo de tudo' },
+      { id: 'D', texto: 'se acomoda, complacente, pronto para ajudar' },
     ]
   },
   {
     pergunta: 20,
     opcoes: [
-      { id: 'A', letra: 'D', texto: 'gosta de discutir, controverso, confrontante' },
-      { id: 'B', letra: 'I', texto: 'adaptável, flexível' },
-      { id: 'C', letra: 'S', texto: 'relaxado, leva as coisas com calma, tranqüilo' },
-      { id: 'D', letra: 'C', texto: 'leve, despreocupado, descomplicado' },
+      { id: 'A', texto: 'gosta de discutir, controverso, confrontante' },
+      { id: 'B', texto: 'adaptável, flexível' },
+      { id: 'C', texto: 'relaxado, leva as coisas com calma, tranqüilo' },
+      { id: 'D', texto: 'leve, despreocupado, descomplicado' },
     ]
   },
   {
     pergunta: 21,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'confia nos demais, tem fé nas pessoas' },
-      { id: 'B', letra: 'S', texto: 'contente, satisfeito' },
-      { id: 'C', letra: 'D', texto: 'positivo, não admite dúvidas nem temores' },
-      { id: 'D', letra: 'C', texto: 'pacífico, tranqüilo' },
+      { id: 'A', texto: 'confia nos demais, tem fé nas pessoas' },
+      { id: 'B', texto: 'contente, satisfeito' },
+      { id: 'C', texto: 'positivo, não admite dúvidas nem temores' },
+      { id: 'D', texto: 'pacífico, tranqüilo' },
     ]
   },
   {
     pergunta: 22,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'socialmente hábil, gosta de estar com os demais' },
-      { id: 'B', letra: 'C', texto: 'educado, culto, conhecedor' },
-      { id: 'C', letra: 'D', texto: 'vigoroso, enérgico' },
-      { id: 'D', letra: 'S', texto: 'tolerante, pouco exato, compreensivo' },
+      { id: 'A', texto: 'socialmente hábil, gosta de estar com os demais' },
+      { id: 'B', texto: 'educado, culto, conhecedor' },
+      { id: 'C', texto: 'vigoroso, enérgico' },
+      { id: 'D', texto: 'tolerante, pouco exato, compreensivo' },
     ]
   },
   {
     pergunta: 23,
     opcoes: [
-      { id: 'A', letra: 'I', texto: 'agradável, sua companhia é prazerosa' },
-      { id: 'B', letra: 'C', texto: 'exato, correto, preciso' },
-      { id: 'C', letra: 'D', texto: 'tem opiniões claras, fala livre e abertamente' },
-      { id: 'D', letra: 'S', texto: 'reservado, controlado' },
+      { id: 'A', texto: 'agradável, sua companhia é prazerosa' },
+      { id: 'B', texto: 'exato, correto, preciso' },
+      { id: 'C', texto: 'tem opiniões claras, fala livre e abertamente' },
+      { id: 'D', texto: 'reservado, controlado' },
     ]
   },
   {
     pergunta: 24,
     opcoes: [
-      { id: 'A', letra: 'D', texto: 'impaciente, não se permite relaxar, não descansa' },
-      { id: 'B', letra: 'I', texto: 'sociável, amável' },
-      { id: 'C', letra: 'S', texto: 'popular, apreciado por muitas pessoas' },
-      { id: 'D', letra: 'C', texto: 'ordenado, organizado, claro' },
+      { id: 'A', texto: 'impaciente, não se permite relaxar, não descansa' },
+      { id: 'B', texto: 'sociável, amável' },
+      { id: 'C', texto: 'popular, apreciado por muitas pessoas' },
+      { id: 'D', texto: 'ordenado, organizado, claro' },
     ]
   }
 ];
@@ -245,7 +277,7 @@ export default function DiscForm() {
   useEffect(() => {
     const fetchLinkData = async () => {
       try {
-        const response = await axios.get(`http://localhost:3001/api/disc/link/${token}`);
+        const response = await axios.get(`http://192.168.0.144:3001/api/disc/link/${token}`);
         if (response.data.sucesso) {
           setLinkContext(response.data.dados);
           if (response.data.dados.status === 'EXPIRED') {
@@ -277,11 +309,11 @@ export default function DiscForm() {
     // Fluxo Funcionario Interno (Valida CPF no Protheus)
     if (linkContext?.isEmployee) {
       try {
-        const response = await axios.get(`http://localhost:3001/api/employees/check-cpf/${cpf}?token=${token}`);
+        const response = await axios.get(`http://192.168.0.144:3001/api/employees/check-cpf/${cpf}?token=${token}`);
         if (response.data.sucesso) {
           // Dispara também o POST pro nosso backend para registrar que iniciou (PROGRESS) e salvar o CPF/Nome
           try {
-            await axios.post(`http://localhost:3001/api/disc/link/${token}/iniciar`, {
+            await axios.post(`http://192.168.0.144:3001/api/disc/link/${token}/iniciar`, {
               nome: response.data.dados.name || response.data.dados.nome || 'Funcionário',
               cpf: cpf
             });
@@ -313,7 +345,7 @@ export default function DiscForm() {
         return;
       }
       try {
-        await axios.post(`http://localhost:3001/api/disc/link/${token}/iniciar`, {
+        await axios.post(`http://192.168.0.144:3001/api/disc/link/${token}/iniciar`, {
           nome: nomeCompleto.trim(),
           cpf: cpf
         });
@@ -360,28 +392,62 @@ export default function DiscForm() {
       questoesDISC.forEach(q => {
         const resp = respostas[q.pergunta];
         if (resp) {
-          const opcaoMais = q.opcoes.find(o => o.id === resp.mais);
-          const opcaoMenos = q.opcoes.find(o => o.id === resp.menos);
+          const mapping = DISC_MAPPING[q.pergunta];
 
-          if (opcaoMais && opcaoMais.letra) rawAdaptado[opcaoMais.letra] += 1;
-          if (opcaoMenos && opcaoMenos.letra) rawNatural[opcaoMenos.letra] += 1;
+          // MAIS -> Ambiente Adaptado (usa o mapeamento MAIS da questão)
+          if (resp.mais && mapping) {
+            const letraMais = mapping.MAIS[resp.mais];
+            if (letraMais && letraMais !== '-') {
+              rawAdaptado[letraMais] += 1;
+            }
+          }
+
+          // MENOS -> Ambiente Natural (usa o mapeamento MENOS da questão)
+          if (resp.menos && mapping) {
+            const letraMenos = mapping.MENOS[resp.menos];
+            if (letraMenos && letraMenos !== '-') {
+              rawNatural[letraMenos] += 1;
+            }
+          }
         }
       });
 
-      const normatizar = (val) => Math.min(100, Math.round((val / 24) * 100 * 1.15));
+      // Tabela de conversão oficial DISC (índice = contagem bruta da letra)
+      // ADAPTADO: quanto MAIS a letra aparece, MAIOR a pontuação
+      const ADAPTED_TABLE = {
+        D: [5, 15, 24, 34, 38, 43, 48, 54, 59, 65, 74, 76, 79, 83, 85, 94, 97, 97, 97, 97, 100, 100],
+        I: [8, 20, 35, 43, 57, 68, 73, 82, 87, 91, 96, 96, 96, 96, 96, 96, 96, 100, 100, 100, 100, 100],
+        S: [11, 21, 30, 38, 45, 55, 60, 73, 75, 79, 85, 89, 96, 96, 96, 96, 96, 96, 100, 100, 100, 100],
+        C: [0, 16, 30, 40, 55, 66, 73, 85, 87, 97, 97, 97, 97, 97, 96, 100, 100, 100, 100, 100, 100, 100],
+      };
+
+      // NATURAL: quanto MENOS a letra aparece, MAIOR a pontuação (lógica inversa)
+      const NATURAL_TABLE = {
+        D: [100, 87, 75, 67, 60, 54, 47, 42, 40, 32, 28, 25, 22, 15, 11, 8, 5, 5, 5, 5, 5, 2],
+        I: [100, 86, 75, 67, 55, 47, 37, 28, 22, 15, 10, 8, 8, 8, 8, 8, 8, 8, 5, 0, 0, 0],
+        S: [100, 97, 85, 75, 68, 60, 53, 42, 37, 28, 23, 16, 8, 5, 5, 5, 5, 5, 0, 0, 0, 0],
+        C: [100, 97, 83, 75, 66, 58, 52, 45, 38, 33, 23, 15, 7, 5, 5, 5, 0, 0, 0, 0, 0, 0],
+      };
+
+      const lookupScore = (table, letra, count) => {
+        const arr = table[letra];
+        if (!arr) return 0;
+        const idx = Math.min(count, arr.length - 1);
+        return arr[idx];
+      };
 
       const resultados = {
         adaptado: {
-          D: normatizar(rawAdaptado.D),
-          I: normatizar(rawAdaptado.I),
-          S: normatizar(rawAdaptado.S),
-          C: normatizar(rawAdaptado.C),
+          D: lookupScore(ADAPTED_TABLE, 'D', rawAdaptado.D),
+          I: lookupScore(ADAPTED_TABLE, 'I', rawAdaptado.I),
+          S: lookupScore(ADAPTED_TABLE, 'S', rawAdaptado.S),
+          C: lookupScore(ADAPTED_TABLE, 'C', rawAdaptado.C),
         },
         natural: {
-          D: normatizar(rawNatural.D),
-          I: normatizar(rawNatural.I),
-          S: normatizar(rawNatural.S),
-          C: normatizar(rawNatural.C),
+          D: lookupScore(NATURAL_TABLE, 'D', rawNatural.D),
+          I: lookupScore(NATURAL_TABLE, 'I', rawNatural.I),
+          S: lookupScore(NATURAL_TABLE, 'S', rawNatural.S),
+          C: lookupScore(NATURAL_TABLE, 'C', rawNatural.C),
         },
         bruto: { adaptado: rawAdaptado, natural: rawNatural },
         finalizadoEm: new Date().toISOString()
@@ -389,7 +455,7 @@ export default function DiscForm() {
 
       // Executa o POST para a API do backend sinalizando que o teste foi Finalizado (Status => CONCLUDED)
       try {
-        await axios.post(`http://localhost:3001/api/disc/link/${token}/finalizar`, {
+        await axios.post(`http://192.168.0.144:3001/api/disc/link/${token}/finalizar`, {
           respostas: Object.values(respostas),
           resultado: resultados,
           departamentCode: colaborador?.costCenterDescription

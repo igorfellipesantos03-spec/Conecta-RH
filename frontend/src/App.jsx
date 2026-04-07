@@ -10,61 +10,55 @@ import DiscManager from './pages/rh/DiscManager'
 import DiscHub from './pages/rh/DiscHub'
 import DiscDashboard from './pages/rh/DiscDashboard'
 import AccessDenied from './pages/rh/AccessDenied'
+import AccessApprovalHub from './pages/rh/AccessApprovalHub'
+import ManagerRequestModal from './components/ManagerRequestModal'
+import MeuDisc from './pages/rh/MeuDisc'
 
 // ==========================================
-// PÁGINA HOME (HUB)
+// PÁGINA HOME (HUB) — DINÂMICO POR ROLE
 // ==========================================
 function Home() {
   const navigate = useNavigate()
   const [firstName, setFirstName] = useState('')
+  const [userRole, setUserRole] = useState('USER')
+  const [showManagerModal, setShowManagerModal] = useState(false)
+  const [managerRequestSuccess, setManagerRequestSuccess] = useState(null)
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem('@ConectaRH:user');
       if (stored) {
         const user = JSON.parse(stored);
-        if (user.name) {
-          setFirstName(user.name.split(' ')[0]);
-        }
+        if (user.name) setFirstName(user.name.split(' ')[0]);
+        setUserRole(user.role || 'USER');
       }
     } catch (err) { }
   }, []);
 
-  const mockCards = [
-    {
-      id: 1,
-      title: 'Gestão de Treinamentos',
-      description: 'Crie, controle e avalie os treinamentos presenciais e online da empresa.',
-      icon: (
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-      ),
-      action: () => navigate('/em-desenvolvimento')
-    },
-    {
-      id: 2,
-      title: 'DISC',
-      description: 'Sistema para geração e controle de relatórios DISC do RH.',
-      icon: (
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-      action: () => navigate('/rh/disc-hub')
-    },
-    {
-      id: 3,
-      title: 'OffBoarding',
-      description: 'Gerencie o processo de desligamento de colaboradores.',
-      icon: (
-        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      ),
-      action: () => navigate('/em-desenvolvimento')
-    }
-  ]
+  const iconTraining = (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>)
+  const iconDisc = (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>)
+  const iconOff = (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>)
+  const iconTeam = (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>)
+  const iconMyDisc = (<svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>)
+
+  let cards = []
+  if (userRole === 'ADMIN' || userRole === 'RH') {
+    cards = [
+      { id: 1, title: 'Gestão de Treinamentos', description: 'Crie, controle e avalie os treinamentos presenciais e online.', icon: iconTraining, action: () => navigate('/em-desenvolvimento') },
+      { id: 2, title: 'DISC', description: 'Sistema para geração e controle de relatórios DISC do RH.', icon: iconDisc, action: () => navigate('/rh/disc-hub') },
+      { id: 3, title: 'OffBoarding', description: 'Gerencie o processo de desligamento de colaboradores.', icon: iconOff, action: () => navigate('/em-desenvolvimento') }
+    ]
+  } else if (userRole === 'GESTOR') {
+    cards = [
+      { id: 1, title: 'DISC da Equipe', description: 'Consulte os resultados DISC dos colaboradores sob sua gestão.', icon: iconTeam, action: () => navigate('/rh/disc-hub') },
+      { id: 2, title: 'Meu DISC', description: 'Visualize o seu próprio resultado DISC.', icon: iconMyDisc, action: () => navigate('/rh/meu-disc') }
+    ]
+  } else {
+    cards = [
+      { id: 1, title: 'Meu DISC', description: 'Visualize o seu próprio resultado DISC.', icon: iconMyDisc, action: () => navigate('/rh/meu-disc') }
+    ]
+  }
+
 
   return (
     <main className="flex-1 w-full max-w-7xl mx-auto px-6 py-12 lg:py-20">
@@ -73,21 +67,32 @@ function Home() {
           Olá{firstName ? `, ${firstName}` : ''}. <span className="text-gray-400">O que você quer fazer hoje?</span>
         </h2>
       </div>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {mockCards.map((card) => (
-          <HubCard
-            key={card.id}
-            title={card.title}
-            description={card.description}
-            icon={card.icon}
-            onClick={card.action}
-          />
+        {cards.map((card) => (
+          <HubCard key={card.id} title={card.title} description={card.description} icon={card.icon} onClick={card.action} />
         ))}
       </div>
+      {userRole === 'USER' && (
+        <div className="mt-10 bg-gradient-to-r from-blue-900/30 to-purple-900/30 border border-blue-500/20 rounded-2xl p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h3 className="text-white font-bold text-lg">É líder de equipe?</h3>
+            <p className="text-gray-400 text-sm mt-1">Solicite acesso ao painel de Gestão para ver os DISCs da sua equipe.</p>
+          </div>
+          <button onClick={() => setShowManagerModal(true)} className="bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm py-2.5 px-6 rounded-xl shadow-lg shadow-blue-500/20 transition-all cursor-pointer whitespace-nowrap">
+            Solicitar Acesso
+          </button>
+        </div>
+      )}
+      {managerRequestSuccess && (
+        <div className="mt-4 p-4 rounded-xl bg-green-500/10 border border-green-500/20 text-green-400 text-sm">{managerRequestSuccess}</div>
+      )}
+      {showManagerModal && (
+        <ManagerRequestModal onClose={() => setShowManagerModal(false)} onSuccess={(msg) => { setManagerRequestSuccess(msg); setShowManagerModal(false); setTimeout(() => setManagerRequestSuccess(null), 5000); }} />
+      )}
     </main>
   )
 }
+
 
 // ==========================================
 // PÁGINA DASHBOARD TREINAMENTOS
@@ -488,8 +493,8 @@ function ProtectedRoute({ allowedRoles }) {
     try {
       const storedUser = JSON.parse(localStorage.getItem('@ConectaRH:user') || '{}')
       // Normaliza roles legadas para o formato atual do RBAC
-      const ROLE_MAP = { ADMIN: 'ADMIN', RH: 'RH', GESTOR: 'GESTOR', TI: 'ADMIN', 'Recursos Humanos': 'RH', 'recursos humanos': 'RH' }
-      const userRole = ROLE_MAP[storedUser.role] || 'RH'
+      const ROLE_MAP = { ADMIN: 'ADMIN', RH: 'RH', GESTOR: 'GESTOR', USER: 'USER', TI: 'ADMIN', 'Recursos Humanos': 'RH', 'recursos humanos': 'RH' }
+      const userRole = ROLE_MAP[storedUser.role] || 'USER'
       if (!allowedRoles.includes(userRole)) {
         return <Navigate to="/acesso-negado" replace />
       }
@@ -627,8 +632,10 @@ function AppContent() {
               <Route path="/treinamentos" element={<TreinamentosDashboard />} />
               <Route path="/em-desenvolvimento" element={<EmDesenvolvimento />} />
               <Route path="/rh/disc-hub" element={<DiscHub />} />
+              <Route path="/rh/meu-disc" element={<MeuDisc />} />
               <Route path="/disc" element={<DiscDashboard />} />
               <Route path="/disc-results" element={<DiscResults />} />
+              <Route path="/rh/access-approvals" element={<AccessApprovalHub />} />
             </Route>
 
             {/* Apenas ADMIN e RH podem gerar links DISC */}

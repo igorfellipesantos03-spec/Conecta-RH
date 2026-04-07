@@ -1,6 +1,26 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <script>
+      window.onerror = function(msg, url, line, col, error) {
+        var p = document.createElement("pre");
+        p.style.color = "red";
+        p.style.fontSize = "20px";
+        p.style.zIndex = "999999";
+        p.style.position = "absolute";
+        p.textContent = msg + " | " + (error <head><head> error.stack);
+        document.body.appendChild(p);
+      };
+      window.addEventListener("unhandledrejection", function(event) {
+        var p = document.createElement("pre");
+        p.style.color = "red";
+        p.style.fontSize = "20px";
+        p.style.zIndex = "999999";
+        p.style.position = "absolute";
+        p.textContent = "Unhandled Rejection: " + event.reason;
+        document.body.appendChild(p);
+      });
+    </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

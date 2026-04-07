@@ -49,4 +49,37 @@ function authMiddleware(req, res, next) {
   }
 }
 
+/**
+ * Versão simplificada do authMiddleware que valida apenas o JWT,
+ * sem exigir a sessão Protheus. Usada em rotas que não precisam
+ * acessar o Protheus (ex: /api/access).
+ */
+function verifyToken(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Token não fornecido ou formato inválido.' });
+  }
+
+  const token = authHeader.split(' ')[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = {
+      username: decoded.username,
+      role: decoded.role,
+      name: decoded.name,
+      departamentCode: decoded.departamentCode || null,
+      empresaId: decoded.empresaId || null,
+      filialId: decoded.filialId || null
+    };
+    next();
+  } catch (err) {
+    if (err.name === 'TokenExpiredError') {
+      return res.status(401).json({ error: 'Token expirado. Por favor, faça login novamente.' });
+    }
+    return res.status(401).json({ error: 'Token inválido.' });
+  }
+}
+
 module.exports = authMiddleware;
+module.exports.verifyToken = verifyToken;

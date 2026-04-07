@@ -1,10 +1,4 @@
-const { Pool } = require('pg');
-const { PrismaPg } = require('@prisma/adapter-pg');
-const { PrismaClient } = require('@prisma/client');
-
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+const prisma = require('../lib/prisma');
 const { buscarFuncionarioPorCpfSistema } = require('../services/protheusService');
 
 /**
@@ -64,7 +58,8 @@ const checkCpf = async (req, res) => {
           isEmployee: true,
           nome: func.name,
           name: func.name, // Retrocompatibilidade temporária com DiscForm
-          costCenterDescription: func.costCenterDescription
+          costCenterDescription: func.costCenterDescription,
+          costCenterCode: func.costCenterCode  // Código do centro de custo para cache
         }
       });
 

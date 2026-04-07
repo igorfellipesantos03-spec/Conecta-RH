@@ -2,9 +2,9 @@ const axios = require('axios');
 
 // URLs da API do Protheus
 const PROTHEUS_AUTH_URL =
-  'https://restauth.protheusteste.conasa.com/rest/api/oauth2/v1/token?grant_type=password';
+  'https://restauth.protheus.conasa.com/rest/api/oauth2/v1/token?grant_type=password';
 const PROTHEUS_DATA_URL =
-  'https://restauth.protheusteste.conasa.com/rest/rh/v1/employeedatacontent/';
+  'https://restauth.protheus.conasa.com/rest/rh/v1/employeedatacontent/';
 
 /**
  * Obtém um access_token de SISTEMA do Protheus (credenciais fixas do .env).

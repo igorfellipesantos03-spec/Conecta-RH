@@ -1,88 +1,13 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip
+} from 'recharts';
 import api from '../../services/api';
+import { DiscResultContent, DiscProfileAnalysis, DISC_PROFILES } from '../../components/DiscResultView';
+import ManagerRequestModal from '../../components/ManagerRequestModal';
 
-// ──────────────────────────────────────────────
-// CONSTANTES DE PERFIL DISC
-// ──────────────────────────────────────────────
-const DISC_PROFILES = {
-  D: {
-    nome: 'Alto D — Dominância',
-    cor: 'text-red-400',
-    corBg: 'bg-red-500/10 border-red-500/20',
-    corBarra: 'bg-red-500',
-    emoji: '🔴',
-    descricao: 'Perfil executor, direto e orientado a resultados. Toma decisões rápidas e aceita desafios.',
-    valores: [
-      'Obtendo resultados e delegando tarefas',
-      'Aceitando desafios e tomando decisões',
-      'Questionando o status quo e assumindo autoridade',
-      'Criando soluções rápidas e inovadoras',
-    ],
-    pontosForca: 'Impulsionador natural, liderança proativa, capacidade de delegar e de agir sob pressão.',
-    pontosMelhorar: 'Desenvolver mais paciência, consideração com sentimentos alheios e reconhecer resultados da equipe.',
-    comunicacao: 'Direto, preciso e objetivo. Prefere comunicação escrita e vai direto ao ponto.',
-    temores: 'Lentidão, dependência e excesso de jovialidade fora do seu controle.',
-    tomadaDecisao: 'Rápida e enfática. Uma vez decidido, dificilmente muda de ideia.',
-  },
-  I: {
-    nome: 'Alto I — Influência',
-    cor: 'text-yellow-400',
-    corBg: 'bg-yellow-500/10 border-yellow-500/20',
-    corBarra: 'bg-yellow-500',
-    emoji: '🟡',
-    descricao: 'Perfil comunicador, entusiasta e orientado a relacionamentos. Motiva as pessoas ao seu redor.',
-    valores: [
-      'Criando impressões favoráveis e se comunicando',
-      'Motivando pessoas e gerando entusiasmo',
-      'Cultivando relacionamentos e demonstrando preocupação',
-      'Influenciando pessoas a agir de forma positiva',
-    ],
-    pontosForca: 'Entusiasmo contagiante, elogios e otimismo. Grande habilidade de persuasão e criação de vínculos.',
-    pontosMelhorar: 'Ter abordagem mais direta, controlar o tempo, trabalhar com dados analíticos e prazos realistas.',
-    comunicacao: 'Natural e envolvente. Compartilha facilmente, mas pode ter dificuldade em guardar segredos.',
-    temores: 'Ambiente fixo com pouca diversidade, perda de reconhecimento social e sentir-se em desvantagem.',
-    tomadaDecisao: 'Impulsiva e rápida. Evita decisões impopulares e se preocupa com a opinião alheia.',
-  },
-  S: {
-    nome: 'Alto S — Estabilidade',
-    cor: 'text-green-400',
-    corBg: 'bg-green-500/10 border-green-500/20',
-    corBarra: 'bg-green-500',
-    emoji: '🟢',
-    descricao: 'Perfil estabilizador, consistente e focado em finalizar tarefas. Ouve atentamente e apoia a equipe.',
-    valores: [
-      'Desenvolvendo habilidades especializadas',
-      'Estabilizando pessoas agitadas e apoiando os outros',
-      'Mantendo consistência e persistindo nas tarefas',
-      'Ouvindo atentamente e prestando serviço de qualidade',
-    ],
-    pontosForca: 'Determinação, consistência, organização e confiabilidade. Excelente finalizador de tarefas.',
-    pontosMelhorar: 'Ter mais entusiasmo, flexibilidade, aceitação de outros estilos e usar métodos de atalho.',
-    comunicacao: 'Quieto, calmo e gentil. Não fala mais que o necessário. Questiona e dá sugestões.',
-    temores: 'Envolvimento pessoal muito rápido, exposição de ideias, mudanças bruscas e desorganização.',
-    tomadaDecisao: 'Completa e demorada. Uma vez decidido, é difícil persuadi-lo a mudar.',
-  },
-  C: {
-    nome: 'Alto C — Conformidade',
-    cor: 'text-blue-400',
-    corBg: 'bg-blue-500/10 border-blue-500/20',
-    corBarra: 'bg-blue-500',
-    emoji: '🔵',
-    descricao: 'Perfil analista, preciso e orientado a qualidade. Toma decisões embasadas em dados e evidências.',
-    valores: [
-      'Concentrando no detalhe e operando em ambiente controlado',
-      'Sendo diplomático e analisando problemas em profundidade',
-      'Garantindo padrões e achando erros antes que aconteçam',
-      'Pesquisando e assumindo problemas com responsabilidade',
-    ],
-    pontosForca: 'Exatidão, diplomacia, análise crítica e aderência a padrões de qualidade.',
-    pontosMelhorar: 'Desenvolver consciência dos sentimentos, verbalizar emoções e trabalhar mais em equipe.',
-    comunicacao: 'Observa a distância. Fala apenas o necessário. Questiona pela lógica e não se envolve em conversas informais.',
-    temores: 'Emoções irracionais, ações não lógicas e perder a argumentação.',
-    tomadaDecisao: 'Lenta e baseada em evidências. Quer decidir com perfeição, o que pode gerar paralisia.',
-  },
-};
+// DISC_PROFILES moved to DiscResultView.jsx
 
 // ──────────────────────────────────────────────
 // HELPER: Badge de Status
@@ -185,85 +110,11 @@ function LinkCard({ link }) {
   );
 }
 
-// ──────────────────────────────────────────────
-// HELPER: Análise do Perfil DISC (componente reutilizável)
-// ──────────────────────────────────────────────
-export function DiscProfileAnalysis({ resultado }) {
-  if (!resultado) return null;
-
-  const natural = resultado.natural || resultado.ambienteNatural || {};
-  if (!Object.keys(natural).length) return null;
-
-  // Encontra a letra com maior pontuação
-  const dominante = Object.entries(natural).reduce(
-    (max, [k, v]) => (v > max[1] ? [k, v] : max),
-    ['D', -1]
-  )[0];
-
-  const perfil = DISC_PROFILES[dominante];
-  if (!perfil) return null;
-
-  return (
-    <div className={`rounded-2xl border p-6 md:p-8 ${perfil.corBg} mt-8`}>
-      {/* Título */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="text-3xl">{perfil.emoji}</div>
-        <div>
-          <h3 className={`text-xl font-bold ${perfil.cor}`}>{perfil.nome}</h3>
-          <p className="text-gray-400 text-sm mt-0.5">{perfil.descricao}</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Valores para a Organização */}
-        <div>
-          <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-3">
-            ✦ Valores para a Organização
-          </h4>
-          <ul className="space-y-2">
-            {perfil.valores.map((v, i) => (
-              <li key={i} className="flex items-start gap-2 text-gray-300 text-sm">
-                <span className={`mt-0.5 w-1.5 h-1.5 rounded-full flex-shrink-0 ${perfil.corBarra}`} />
-                {v}
-              </li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Detalhes comportamentais */}
-        <div className="space-y-4">
-          <div>
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">💪 Pontos Fortes</h4>
-            <p className="text-gray-300 text-sm">{perfil.pontosForca}</p>
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">📈 Pontos a Desenvolver</h4>
-            <p className="text-gray-300 text-sm">{perfil.pontosMelhorar}</p>
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">💬 Estilo de Comunicação</h4>
-            <p className="text-gray-300 text-sm">{perfil.comunicacao}</p>
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">⚡ Tomada de Decisão</h4>
-            <p className="text-gray-300 text-sm">{perfil.tomadaDecisao}</p>
-          </div>
-          <div>
-            <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">⚠️ Temores</h4>
-            <p className="text-gray-300 text-sm">{perfil.temores}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+// DiscProfileAnalysis moved to DiscResultView.jsx
 
 // ──────────────────────────────────────────────
 // MODAL: Detalhe do DISC Concluído
 // ──────────────────────────────────────────────
-import {
-  Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip
-} from 'recharts';
 
 function DiscDetailModal({ link: initialLink, onClose }) {
   const [currentLink, setCurrentLink] = useState(initialLink);
@@ -285,24 +136,6 @@ function DiscDetailModal({ link: initialLink, onClose }) {
   const natural = resultado.natural || resultado.ambienteNatural || {};
   const adaptado = resultado.adaptado || resultado.ambienteAdaptado || {};
 
-  const toRadarData = (obj) => [
-    { subject: 'D (Dominância)', A: obj.D || 0, fullMark: 100 },
-    { subject: 'I (Influência)', A: obj.I || 0, fullMark: 100 },
-    { subject: 'S (Estabilidade)', A: obj.S || 0, fullMark: 100 },
-    { subject: 'C (Conformidade)', A: obj.C || 0, fullMark: 100 },
-  ];
-
-  const renderBar = (label, pct, colorClass) => (
-    <div className="mb-3" key={label}>
-      <div className="flex justify-between items-end mb-1">
-        <span className="text-sm font-medium text-gray-300">{label}</span>
-        <span className="text-sm text-gray-400 font-mono">{pct}%</span>
-      </div>
-      <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
-        <div className={`h-2 rounded-full transition-all duration-700 ${colorClass}`} style={{ width: `${pct}%` }} />
-      </div>
-    </div>
-  );
 
   const respostas = Array.isArray(link.respostas) ? link.respostas : [];
 
@@ -350,87 +183,14 @@ function DiscDetailModal({ link: initialLink, onClose }) {
           </button>
         </div>
 
-        <div className="p-6 space-y-8">
-          {/* Gráficos */}
-          {(Object.keys(natural).length > 0 || Object.keys(adaptado).length > 0) && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Ambiente Natural */}
-              {Object.keys(natural).length > 0 && (
-                <div className="bg-gray-950 border border-gray-800 rounded-xl p-5">
-                  <h3 className="text-lg font-semibold text-white mb-4">Ambiente Natural</h3>
-                  <div className="h-56 mb-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart data={toRadarData(natural)}>
-                        <PolarGrid stroke="#374151" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                        <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#fff' }} />
-                        <Radar name="Natural" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.35} />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  {renderBar('Dominância (D)', natural.D || 0, 'bg-red-500')}
-                  {renderBar('Influência (I)', natural.I || 0, 'bg-yellow-500')}
-                  {renderBar('Estabilidade (S)', natural.S || 0, 'bg-green-500')}
-                  {renderBar('Conformidade (C)', natural.C || 0, 'bg-blue-500')}
-                </div>
-              )}
-              {/* Ambiente Adaptado */}
-              {Object.keys(adaptado).length > 0 && (
-                <div className="bg-gray-950 border border-gray-800 rounded-xl p-5">
-                  <h3 className="text-lg font-semibold text-white mb-4">Ambiente Adaptado</h3>
-                  <div className="h-56 mb-4">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart data={toRadarData(adaptado)}>
-                        <PolarGrid stroke="#374151" />
-                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                        <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#fff' }} />
-                        <Radar name="Adaptado" dataKey="A" stroke="#10b981" fill="#10b981" fillOpacity={0.35} />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
-                  {renderBar('Dominância (D)', adaptado.D || 0, 'bg-red-500')}
-                  {renderBar('Influência (I)', adaptado.I || 0, 'bg-yellow-500')}
-                  {renderBar('Estabilidade (S)', adaptado.S || 0, 'bg-green-500')}
-                  {renderBar('Conformidade (C)', adaptado.C || 0, 'bg-blue-500')}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Análise do Perfil */}
-          <DiscProfileAnalysis resultado={resultado} />
-
-          {/* Respostas Selecionadas */}
-          {respostas.length > 0 && (
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4">
-                Respostas Selecionadas <span className="text-gray-500 text-sm font-normal">({respostas.length} questões)</span>
-              </h3>
-              <div className="bg-gray-950 border border-gray-800 rounded-xl divide-y divide-gray-800 max-h-72 overflow-y-auto">
-                {respostas.map((resp, i) => (
-                  <div key={i} className="px-5 py-3 flex items-start gap-4">
-                    <span className="text-gray-600 font-mono text-sm w-6 flex-shrink-0">{i + 1}.</span>
-                    <div className="flex-1 min-w-0">
-                      {resp.pergunta && <p className="text-gray-400 text-xs mb-0.5 truncate">{resp.pergunta}</p>}
-                      <p className="text-gray-200 text-sm font-medium">{resp.resposta || resp.opcao || JSON.stringify(resp)}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
+        <div className="p-6">
+          <DiscResultContent resultado={resultado} respostas={respostas} />
         </div>
       </div>
     </div>
   );
 }
 
-// ──────────────────────────────────────────────
-// COMPONENTE PRINCIPAL: DiscHub
-// ──────────────────────────────────────────────
 const TABS = [
   { id: 'status',    label: '📊 Acompanhar Status' },
   { id: 'resultados', label: '🔍 Consultar Resultados' },
@@ -473,6 +233,9 @@ export default function DiscHub() {
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterFilial, setFilterFilial] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+
+  const [showManagerModal, setShowManagerModal] = useState(false);
+  const [managerRequestSuccess, setManagerRequestSuccess] = useState(null);
 
   // ── Role do usuário logado ─────────────────────
   const [userRole, setUserRole] = useState('RH');
@@ -621,32 +384,78 @@ export default function DiscHub() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
             </button>
-            <button
-              onClick={() => navigate('/rh/disc-manager')}
-              className="bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 px-5 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-2 text-sm cursor-pointer"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Gerar Novo Link
-            </button>
+            {(userRole === 'ADMIN' || userRole === 'RH') && (
+              <button
+                onClick={() => navigate('/rh/disc-manager')}
+                className="bg-blue-600 hover:bg-blue-500 text-white font-medium py-2.5 px-5 rounded-xl shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 flex items-center gap-2 text-sm cursor-pointer"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Gerar Novo Link
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Cards de Resumo */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Total',        val: links.length,                                         cls: 'text-white',         bg: 'bg-gray-900 border-gray-800' },
-            { label: 'Pendentes',    val: links.filter(l => l.status === 'PENDING').length,     cls: 'text-yellow-400',    bg: 'bg-yellow-500/5 border-yellow-500/20' },
-            { label: 'Em Andamento', val: links.filter(l => l.status === 'PROGRESS').length,    cls: 'text-cyan-400',      bg: 'bg-cyan-500/5 border-cyan-500/20' },
-            { label: 'Concluídos',   val: links.filter(l => l.status === 'CONCLUDED').length,   cls: 'text-green-400',     bg: 'bg-green-500/5 border-green-500/20' },
-          ].map(c => (
-            <div key={c.label} className={`border rounded-xl p-4 ${c.bg}`}>
-              <p className="text-gray-500 text-xs font-medium mb-1">{c.label}</p>
-              <p className={`text-2xl font-bold ${c.cls}`}>{c.val}</p>
+        {/* Modal de Solicitação de Acesso */}
+        {showManagerModal && (
+          <ManagerRequestModal 
+            onClose={() => setShowManagerModal(false)} 
+            onSuccess={(msg) => setManagerRequestSuccess(msg)} 
+          />
+        )}
+
+        {/* Mensagem de sucesso após pedir acesso */}
+        {managerRequestSuccess && (
+          <div className="mb-8 p-4 bg-green-500/10 border border-green-500/20 text-green-400 rounded-xl text-sm flex items-start gap-3 justify-between">
+            <div className="flex items-start gap-2">
+              <span className="text-lg">✅</span>
+              <div>
+                <strong className="font-semibold text-green-300 block mb-1">Solicitação Enviada!</strong>
+                {managerRequestSuccess}
+              </div>
             </div>
-          ))}
-        </div>
+            <button onClick={() => setManagerRequestSuccess(null)} className="text-green-500/60 hover:text-green-400 cursor-pointer">✕</button>
+          </div>
+        )}
+
+        {/* Banner para GESTORES PENDENTES (Role: USER) */}
+        {userRole === 'USER' ? (
+          <div className="bg-gradient-to-r from-gray-900 to-gray-800 border border-gray-700 rounded-2xl p-8 text-center flex flex-col items-center justify-center min-h-[40vh] shadow-xl">
+            <div className="w-16 h-16 bg-blue-500/10 flex items-center justify-center rounded-full mb-4">
+              <svg className="w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-white mb-2">Painel de Liderança Bloqueado</h2>
+            <p className="text-gray-400 text-sm max-w-lg mb-8 leading-relaxed">
+              Você não possui permissões automáticas para visualizar os resultados DISC da empresa. 
+              Se você é líder ou gestor de equipe, você pode solicitar a liberação do acesso para os seus Centros de Custo específicos.
+            </p>
+            <button
+              onClick={() => setShowManagerModal(true)}
+              className="bg-blue-600 hover:bg-blue-500 text-white font-medium px-8 py-3 rounded-xl transition-all cursor-pointer shadow-lg shadow-blue-500/20"
+            >
+              Solicitar Acesso de Gestor
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Cards de Resumo */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
+              {[
+                { label: 'Total',        val: links.length,                                         cls: 'text-white',         bg: 'bg-gray-900 border-gray-800' },
+                { label: 'Pendentes',    val: links.filter(l => l.status === 'PENDING').length,     cls: 'text-yellow-400',    bg: 'bg-yellow-500/5 border-yellow-500/20' },
+                { label: 'Em Andamento', val: links.filter(l => l.status === 'PROGRESS').length,    cls: 'text-cyan-400',      bg: 'bg-cyan-500/5 border-cyan-500/20' },
+                { label: 'Concluídos',   val: links.filter(l => l.status === 'CONCLUDED').length,   cls: 'text-green-400',     bg: 'bg-green-500/5 border-green-500/20' },
+              ].map(c => (
+                <div key={c.label} className={`border rounded-xl p-4 ${c.bg}`}>
+                  <p className="text-gray-500 text-xs font-medium mb-1">{c.label}</p>
+                  <p className={`text-2xl font-bold ${c.cls}`}>{c.val}</p>
+                </div>
+              ))}
+            </div>
 
         {/* Tabs + Filtros */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
@@ -889,6 +698,8 @@ export default function DiscHub() {
               );
             })}
           </div>
+        )}
+          </>
         )}
       </main>
     </>

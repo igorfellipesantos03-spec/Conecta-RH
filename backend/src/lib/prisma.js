@@ -1,13 +1,18 @@
+const { Pool } = require('pg');
+const { PrismaPg } = require('@prisma/adapter-pg');
 const { PrismaClient } = require('@prisma/client');
 
-let prisma = null;
-try {
-  // Prevents multiple instances of PrismaClient in development
-  const globalForPrisma = global;
-  prisma = globalForPrisma.prisma || new PrismaClient();
-  if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
-} catch (e) {
-  console.warn('Failed to initialize Prisma Client:', e.message);
+require('dotenv').config();
+
+const globalForPrisma = global;
+
+if (!globalForPrisma.prisma) {
+  const connectionString = process.env.DATABASE_URL;
+  const pool = new Pool({ connectionString });
+  const adapter = new PrismaPg(pool);
+  globalForPrisma.prisma = new PrismaClient({ adapter });
 }
+
+const prisma = globalForPrisma.prisma;
 
 module.exports = prisma;

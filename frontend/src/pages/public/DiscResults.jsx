@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
-import { DiscProfileAnalysis } from '../rh/DiscHub';
+import { DiscProfileAnalysis } from '../../components/DiscResultView';
 
 export default function DiscResults() {
   const location = useLocation();
@@ -42,16 +42,16 @@ export default function DiscResults() {
     { subject: 'C (Conformidade)', A: ambienteAdaptado.C, fullMark: 100 },
   ];
 
-  const renderProgressBar = (label, percentage, colorClass) => (
+  const renderProgressBar = (label, pontuacao, colorClass) => (
     <div className="mb-4" key={label}>
       <div className="flex justify-between items-end mb-1">
         <span className="text-sm font-semibold text-gray-200">{label}</span>
-        <span className="text-sm text-gray-400 font-mono">{percentage}%</span>
+        <span className="text-sm text-gray-400 font-mono">{pontuacao}</span>
       </div>
       <div className="w-full bg-gray-800 rounded-full h-2.5 overflow-hidden border border-gray-700">
         <div
           className={`h-2.5 rounded-full transition-all duration-1000 ${colorClass}`}
-          style={{ width: `${percentage}%` }}
+          style={{ width: `${pontuacao}%` }}
         />
       </div>
     </div>
@@ -93,29 +93,6 @@ export default function DiscResults() {
         {/* Gráficos e Barras */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
 
-          {/* Ambiente Natural */}
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
-            <div className="border-b border-gray-800 pb-4 mb-6">
-              <h3 className="text-xl font-semibold text-white">Ambiente Natural</h3>
-              <p className="text-sm text-gray-500 mt-1">Como você reage instintivamente, sob pressão ou na sua essência.</p>
-            </div>
-            <div className="h-64 w-full mb-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={dataNatural}>
-                  <PolarGrid stroke="#374151" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
-                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                  <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#fff' }} />
-                  <Radar name="Natural" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-            {renderProgressBar('Dominância (D)', ambienteNatural.D, 'bg-red-500')}
-            {renderProgressBar('Influência (I)', ambienteNatural.I, 'bg-yellow-500')}
-            {renderProgressBar('Estabilidade (S)', ambienteNatural.S, 'bg-green-500')}
-            {renderProgressBar('Conformidade (C)', ambienteNatural.C, 'bg-blue-500')}
-          </div>
-
           {/* Ambiente Adaptado */}
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
             <div className="border-b border-gray-800 pb-4 mb-6">
@@ -137,6 +114,29 @@ export default function DiscResults() {
             {renderProgressBar('Influência (I)', ambienteAdaptado.I, 'bg-yellow-500')}
             {renderProgressBar('Estabilidade (S)', ambienteAdaptado.S, 'bg-green-500')}
             {renderProgressBar('Conformidade (C)', ambienteAdaptado.C, 'bg-blue-500')}
+          </div>
+
+          {/* Ambiente Natural */}
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl p-6 shadow-lg">
+            <div className="border-b border-gray-800 pb-4 mb-6">
+              <h3 className="text-xl font-semibold text-white">Ambiente Natural</h3>
+              <p className="text-sm text-gray-500 mt-1">Como você reage instintivamente, sob pressão ou na sua essência.</p>
+            </div>
+            <div className="h-64 w-full mb-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="70%" data={dataNatural}>
+                  <PolarGrid stroke="#374151" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                  <Tooltip contentStyle={{ backgroundColor: '#111827', borderColor: '#374151', color: '#fff' }} />
+                  <Radar name="Natural" dataKey="A" stroke="#3b82f6" fill="#3b82f6" fillOpacity={0.4} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+            {renderProgressBar('Dominância (D)', ambienteNatural.D, 'bg-red-500')}
+            {renderProgressBar('Influência (I)', ambienteNatural.I, 'bg-yellow-500')}
+            {renderProgressBar('Estabilidade (S)', ambienteNatural.S, 'bg-green-500')}
+            {renderProgressBar('Conformidade (C)', ambienteNatural.C, 'bg-blue-500')}
           </div>
         </div>
 

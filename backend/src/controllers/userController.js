@@ -77,27 +77,60 @@ exports.createUser = async (req, res) => {
     const normalizedUsername = username.toLowerCase().trim();
 
     // 1. Verifica se já existe
-    let isExisting = false;
+    let existingUser = null;
     try {
-      const existingUser = await prisma.user.findUnique({ where: { username: normalizedUsername } });
-      if (existingUser) isExisting = true;
+      existingUser = await prisma.user.findUnique({ where: { username: normalizedUsername } });
     } catch (e) {
       console.warn('Prisma findUnique fallback acionado no createUser:', e.message);
       const pool = new Pool({ connectionString: process.env.DATABASE_URL });
       const result = await pool.query('SELECT * FROM users WHERE username = $1', [normalizedUsername]);
-      if (result.rows.length > 0) isExisting = true;
+      if (result.rows.length > 0) existingUser = result.rows[0];
       await pool.end();
     }
 
-    if (isExisting) {
-      return res.status(400).json({ error: 'Este usuário já está cadastrado no sistema.' });
-    }
-
-    // 2. Cria o usuário
-    let newUser = null;
     const finalDeptCode = departamentCode?.trim() || null;
     const finalEmpresaId = empresaId.trim();
     const finalFilialId = filialId ? filialId.trim() : null;
+
+    if (existingUser) {
+      // Se existir, apenas atualiza a role, empresa e outros dados!
+      let updatedUser = null;
+      try {
+        updatedUser = await prisma.user.update({
+          where: { username: normalizedUsername },
+          data: {
+            role,
+            departamentCode: finalDeptCode,
+            empresaId: finalEmpresaId,
+            filialId: finalFilialId,
+            active: true
+          }
+        });
+      } catch (e) {
+        console.warn('Prisma update fallback acionado no UPSERT do createUser:', e.message);
+        const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+        const now = new Date();
+        const query = 'UPDATE users SET role = $1, departament_code = $2, empresa_id = $3, filial_id = $4, active = true, updated_at = $5 WHERE username = $6';
+        await pool.query(query, [role, finalDeptCode, finalEmpresaId, finalFilialId, now, normalizedUsername]);
+        updatedUser = { username: normalizedUsername, role, departamentCode: finalDeptCode, empresaId: finalEmpresaId, filialId: finalFilialId };
+        await pool.end();
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: 'O usuário já existia e seu perfil foi atualizado com sucesso!',
+        user: {
+          username: updatedUser.username,
+          role: updatedUser.role,
+          departamentCode: updatedUser.departamentCode,
+          empresaId: updatedUser.empresaId,
+          filialId: updatedUser.filialId
+        }
+      });
+    }
+
+    // 2. Cria o usuário no banco
+    let newUser = null;
 
     try {
       newUser = await prisma.user.create({
