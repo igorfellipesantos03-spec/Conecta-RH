@@ -483,15 +483,15 @@ function EmDesenvolvimento() {
  *   3. OK → renderiza o <Outlet />
  */
 function ProtectedRoute({ allowedRoles }) {
-  const token = localStorage.getItem('@ConectaRH:access_token')
-  if (!token) {
+  const storedUserRaw = localStorage.getItem('@ConectaRH:user')
+  if (!storedUserRaw) {
     return <Navigate to="/rh/login" replace state={{ error: 'Por segurança, o login é obrigatório.' }} />
   }
 
   // Verifica role somente quando allowedRoles for informado
   if (allowedRoles && allowedRoles.length > 0) {
     try {
-      const storedUser = JSON.parse(localStorage.getItem('@ConectaRH:user') || '{}')
+      const storedUser = JSON.parse(storedUserRaw)
       // Normaliza roles legadas para o formato atual do RBAC
       const ROLE_MAP = { ADMIN: 'ADMIN', RH: 'RH', GESTOR: 'GESTOR', USER: 'USER', TI: 'ADMIN', 'Recursos Humanos': 'RH', 'recursos humanos': 'RH' }
       const userRole = ROLE_MAP[storedUser.role] || 'USER'
@@ -524,8 +524,7 @@ function AppContent() {
     !location.pathname.startsWith('/disc/responder')
 
   const logout = useRef(() => {
-    localStorage.removeItem('@ConectaRH:access_token')
-    localStorage.removeItem('@ConectaRH:refresh_token')
+    api.post('/api/auth/logout').catch(() => {}); // Tentativa de limpar o Cookie HttpOnly no backend
     localStorage.removeItem('@ConectaRH:user')
     setShowWarning(false)
     navigate('/rh/login?expired=true', { replace: true })
@@ -545,8 +544,8 @@ function AppContent() {
   useEffect(() => {
     if (!isProtected) return
 
-    const token = localStorage.getItem('@ConectaRH:access_token')
-    if (!token) return
+    const storedUser = localStorage.getItem('@ConectaRH:user')
+    if (!storedUser) return
 
     const EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'click']
     const handler = () => resetTimer.current()
@@ -564,7 +563,7 @@ function AppContent() {
 
   // Condições para esconder o Header Global
   const hideHeaderRoutes = ['/rh/login', '/rh/login/']
-  const isPublicDiscForm = location.pathname.startsWith('/disc/responder/')
+  const isPublicDiscForm = location.pathname.startsWith('/disc/responder')
   const shouldShowLayout = !hideHeaderRoutes.includes(location.pathname) && !isPublicDiscForm
 
   if (!shouldShowLayout) {
@@ -573,6 +572,12 @@ function AppContent() {
       <div className="min-h-screen bg-gray-950 font-sans text-gray-100 flex flex-col">
         <Routes>
           <Route path="/rh/login" element={<Login />} />
+          <Route path="/disc/responder" element={
+            <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
+              <h2 className="text-2xl font-bold text-red-500 mb-2">Acesso Inválido</h2>
+              <p className="text-gray-400">Seu link do formulário está incompleto. Solicite um novo link ao RH.</p>
+            </div>
+          } />
           <Route path="/disc/responder/:token" element={<DiscForm />} />
           <Route path="/disc/responder/:token/resultados" element={<DiscResults />} />
         </Routes>

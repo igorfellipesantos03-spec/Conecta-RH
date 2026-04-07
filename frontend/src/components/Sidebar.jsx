@@ -154,9 +154,12 @@ export default function Sidebar() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('@ConectaRH:access_token');
-    localStorage.removeItem('@ConectaRH:refresh_token');
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch(err) {
+      // silent
+    }
     localStorage.removeItem('@ConectaRH:user');
     navigate('/rh/login');
   };

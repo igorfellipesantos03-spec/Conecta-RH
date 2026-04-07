@@ -111,10 +111,16 @@ exports.login = async (req, res) => {
 
     const token = jwt.sign(sessionPayload, JWT_SECRET, { expiresIn: '15m' });
 
-    // 7. Resposta: JWT próprio + dados públicos do usuário
+    // 7. Resposta: Seta o cookie HttpOnly e manda apenas os dados do usuário publicamente
+    res.cookie('access_token', token, {
+      httpOnly: true,
+      secure: false, // Alterar para true quando houver certificado SSL em ambiente homolog/prod
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000 // 15 minutos
+    });
+
     return res.status(200).json({
       success: true,
-      access_token: token,
       user: {
         username: normalizedUsername,
         name: officialName,
@@ -129,4 +135,13 @@ exports.login = async (req, res) => {
     console.error('Erro no AuthController:', error);
     return res.status(500).json({ error: 'Erro interno no servidor de autenticação.' });
   }
+};
+
+exports.logout = (req, res) => {
+  res.clearCookie('access_token', {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'lax'
+  });
+  return res.status(200).json({ success: true, message: 'Logout concluído' });
 };

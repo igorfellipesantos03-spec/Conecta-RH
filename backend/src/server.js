@@ -1,7 +1,9 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const cookieParser = require('cookie-parser');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
-
 const { buscarFuncionarios } = require('./services/protheusService');
 
 const app = express();
@@ -10,11 +12,33 @@ require('./services/cronJobs'); // Inicia as tarefas em segundo plano
 
 const origensPermitidas = process.env.FRONTEND_URL || '*';
 
-// Middlewares - Agora o CORS barra requisições que não venham do nosso IP/DNS oficial
+// Middlewares
 app.use(cors({
-  origin: origensPermitidas
+  origin: origensPermitidas,
+  credentials: true // Permite receber e enviar Cookies (HttpOnly)
 }));
+app.use(helmet()); // Headers de segurança OWASP
+app.use(cookieParser()); // Parser para leitura de req.cookies
 app.use(express.json());
+
+// Limite Global de Requisições para evitar DDoS (500 por 15 min)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 500,
+  message: { error: 'Muitas requisições, por favor tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiLimiter);
+
+// Limite estrito para a rota de autenticação (evitar brute-force)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Rota de status do servidor
 app.get('/api/status', (req, res) => {
@@ -33,7 +57,7 @@ const userRoutes = require('./routes/userRoutes');
 const accessRoutes = require('./routes/accessRoutes');
 
 app.use('/api/disc', discRoutes);
-app.use('/api/auth', authRoutes);
+app.use('/api/auth', authLimiter, authRoutes); // Aplica limite estrito APENAS no login
 
 app.use('/api/users', authMiddleware, userRoutes);
 app.use('/api/access', accessRoutes);

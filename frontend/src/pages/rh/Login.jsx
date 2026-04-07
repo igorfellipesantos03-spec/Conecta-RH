@@ -34,9 +34,7 @@ export default function Login() {
       });
 
       if (response.data.success) {
-        // Salva os tokens e os dados básicos no LocalStorage
-        localStorage.setItem('@ConectaRH:access_token', response.data.access_token);
-        localStorage.setItem('@ConectaRH:refresh_token', response.data.refresh_token);
+        // Salva apenas os dados básicos no LocalStorage (o acess_token é retornado via Cookie HttpOnly agora)
         localStorage.setItem('@ConectaRH:user', JSON.stringify(response.data.user));
 
         // Redireciona para o HUB (Home)

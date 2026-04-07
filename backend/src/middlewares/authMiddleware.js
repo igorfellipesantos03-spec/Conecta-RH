@@ -11,12 +11,16 @@ const JWT_SECRET = process.env.JWT_SECRET || 'conectarh_super_secret_key_123';
  * (expirou), retorna 401 pedindo re-login.
  */
 function authMiddleware(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token não fornecido ou formato inválido.' });
+  let token;
+  if (req.cookies && req.cookies.access_token) {
+    token = req.cookies.access_token;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Token não fornecido ou formato inválido.' });
+  }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
@@ -55,12 +59,16 @@ function authMiddleware(req, res, next) {
  * acessar o Protheus (ex: /api/access).
  */
 function verifyToken(req, res, next) {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ error: 'Token não fornecido ou formato inválido.' });
+  let token;
+  if (req.cookies && req.cookies.access_token) {
+    token = req.cookies.access_token;
+  } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    token = req.headers.authorization.split(' ')[1];
   }
 
-  const token = authHeader.split(' ')[1];
+  if (!token) {
+    return res.status(401).json({ error: 'Token não fornecido ou formato inválido.' });
+  }
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
