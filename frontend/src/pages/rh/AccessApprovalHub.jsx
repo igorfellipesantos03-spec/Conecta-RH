@@ -39,7 +39,7 @@ export default function AccessApprovalHub() {
     setError(null);
     try {
       const token = localStorage.getItem('@ConectaRH:token') || localStorage.getItem('@ConectaRH:access_token');
-      const res = await axios.get(`http://192.168.0.144:3001/api/access/requests`, {
+      const res = await axios.get(`https://conectarh.conasa.com/api/access/requests`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.data.success) {
@@ -60,8 +60,8 @@ export default function AccessApprovalHub() {
     try {
       const token = localStorage.getItem('@ConectaRH:token') || localStorage.getItem('@ConectaRH:access_token');
       const endpoint = action === 'approve'
-        ? `http://192.168.0.144:3001/api/access/requests/${id}/approve`
-        : `http://192.168.0.144:3001/api/access/requests/${id}/reject`;
+        ? `https://conectarh.conasa.com/api/access/requests/${id}/approve`
+        : `https://conectarh.conasa.com/api/access/requests/${id}/reject`;
 
       await axios.post(endpoint, {}, {
         headers: { Authorization: `Bearer ${token}` }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { User, Lock, Loader2, AlertCircle } from 'lucide-react';
-import axios from 'axios';
+import api from '../../services/api';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,17 +10,42 @@ export default function Login() {
   const [password, setPassword] = useState('');
   // Se redirecionado pelo ProtectedRoute, exibe a mensagem de erro que veio no state
   const [errorMsg, setErrorMsg] = useState(location.state?.error || '');
+  const [isVisible, setIsVisible] = useState(!!(location.state?.error));
   const [isLoading, setIsLoading] = useState(false);
+
+  // Efeito para sumir com a mensagem de erro automaticamente (Toast dynamic)
+  useEffect(() => {
+    if (errorMsg) {
+      setIsVisible(true);
+
+      // Timer para começar a fechar a mensagem
+      const hideTimer = setTimeout(() => {
+        setIsVisible(false);
+      }, 4500); // Exibe por 6 segundos
+
+      // Timer para limpar o estado após a animação de saída (600ms extras)
+      const clearTimer = setTimeout(() => {
+        setErrorMsg('');
+      }, 5600);
+
+      return () => {
+        clearTimeout(hideTimer);
+        clearTimeout(clearTimer);
+      };
+    } else {
+      setIsVisible(false);
+    }
+  }, [errorMsg]);
 
   // Checa parâmetros da URL para identificar logout por inatividade
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('expired') === 'true') {
       setErrorMsg('Sessão expirada. Você foi desconectado por inatividade.');
-      // Opcional: Limpar o param da URL para evitar mostrar de novo no reload
-      window.history.replaceState({}, document.title, location.pathname);
+      // Limpa URL via react-router (substituiu o window.history.replaceState nativo)
+      navigate(location.pathname, { replace: true });
     }
-  }, [location]);
+  }, [location.search, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,7 +53,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post('http://192.168.0.144:3001/api/auth/login', {
+      const response = await api.post('/auth/login', {
         username,
         password
       });
@@ -107,13 +132,16 @@ export default function Login() {
             />
           </div>
 
-          {/* Mensagem de Erro */}
-          {errorMsg && (
-            <div className="bg-red-950/50 border border-red-500/50 text-red-200 text-xs rounded-lg p-3 flex gap-2 items-start mt-4">
+          {/* Mensagem de Erro Dinâmica */}
+          <div className={`transition-all duration-500 ease-in-out overflow-hidden ${isVisible && errorMsg
+            ? 'max-h-20 opacity-100 mt-4 transform translate-y-0'
+            : 'max-h-0 opacity-0 mt-0 transform -translate-y-2 pointer-events-none'
+            }`}>
+            <div className="bg-red-950/50 border border-red-500/50 text-red-200 text-xs rounded-lg p-3 flex gap-2 items-start">
               <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
               <span>{errorMsg}</span>
             </div>
-          )}
+          </div>
 
           {/* Botão Entrar */}
           <button

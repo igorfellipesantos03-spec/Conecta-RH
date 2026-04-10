@@ -562,7 +562,7 @@ function AppContent() {
 
 
   // Condições para esconder o Header Global
-  const hideHeaderRoutes = ['/rh/login', '/rh/login/']
+  const hideHeaderRoutes = ['/rh/login', '/rh/login/', '/rh', '/rh/']
   const isPublicDiscForm = location.pathname.startsWith('/disc/responder')
   const shouldShowLayout = !hideHeaderRoutes.includes(location.pathname) && !isPublicDiscForm
 
@@ -572,6 +572,7 @@ function AppContent() {
       <div className="min-h-screen bg-gray-950 font-sans text-gray-100 flex flex-col">
         <Routes>
           <Route path="/rh/login" element={<Login />} />
+          <Route path="/rh" element={<Navigate to="/rh/login" replace />} />
           <Route path="/disc/responder" element={
             <div className="flex flex-col items-center justify-center min-h-screen p-6 text-center">
               <h2 className="text-2xl font-bold text-red-500 mb-2">Acesso Inválido</h2>
@@ -580,6 +581,8 @@ function AppContent() {
           } />
           <Route path="/disc/responder/:token" element={<DiscForm />} />
           <Route path="/disc/responder/:token/resultados" element={<DiscResults />} />
+          {/* Rota de Ouro (Catch-All) para layout limpo */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </div>
     )
@@ -650,6 +653,9 @@ function AppContent() {
 
             {/* Tela de Acesso Negado (publica, sem login) */}
             <Route path="/acesso-negado" element={<AccessDenied />} />
+            
+            {/* Rota de Ouro (Catch-All) principal com layout */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </div>
       </div>

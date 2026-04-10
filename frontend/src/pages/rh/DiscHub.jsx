@@ -631,8 +631,9 @@ export default function DiscHub() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {linksFiltrados.map(link => {
               const resultado = link.resultado || {};
-              const natural = resultado.natural || resultado.ambienteNatural || {};
-              const dominante = Object.entries(natural).reduce(
+              // ALTERADO: Usa Ambiente Adaptado em vez de Natural para exibir perfil dominante no card
+              const adaptado = resultado.adaptado || resultado.ambienteAdaptado || {};
+              const dominante = Object.entries(adaptado).reduce(
                 (max, [k, v]) => (v > max[1] ? [k, v] : max),
                 ['?', -1]
               )[0];
@@ -666,8 +667,8 @@ export default function DiscHub() {
                     <StatusBadge status={link.status} />
                   </div>
 
-                  {/* Mini barras do perfil */}
-                  {Object.keys(natural).length > 0 && (
+                  {/* Mini barras do perfil — ALTERADO: Agora exibe dados do Ambiente Adaptado */}
+                  {Object.keys(adaptado).length > 0 && (
                     <div className="space-y-1.5 mb-4">
                       {['D', 'I', 'S', 'C'].map(letra => (
                         <div key={letra} className="flex items-center gap-2">
@@ -675,10 +676,10 @@ export default function DiscHub() {
                           <div className="flex-1 bg-gray-800 rounded-full h-1.5 overflow-hidden">
                             <div
                               className={`h-1.5 rounded-full ${DISC_PROFILES[letra]?.corBarra || 'bg-gray-600'}`}
-                              style={{ width: `${natural[letra] || 0}%` }}
+                              style={{ width: `${adaptado[letra] || 0}%` }}
                             />
                           </div>
-                          <span className="text-gray-500 text-xs w-7 text-right">{natural[letra] || 0}%</span>
+                          <span className="text-gray-500 text-xs w-7 text-right">{adaptado[letra] || 0}%</span>
                         </div>
                       ))}
                     </div>

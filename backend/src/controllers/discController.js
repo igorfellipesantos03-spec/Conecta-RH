@@ -33,7 +33,7 @@ const generateLink = async (req, res) => {
     return res.status(201).json({
       sucesso: true,
       token: discLink.id,
-      link: `${process.env.FRONTEND_URL || 'http://192.168.0.144:5173'}/disc/responder/${discLink.id}`
+      link: `${process.env.FRONTEND_URL || 'https://conectarh.conasa.com'}/disc/responder/${discLink.id}`
     });
   } catch (error) {
     console.error('Erro ao gerar token DISC:', error);

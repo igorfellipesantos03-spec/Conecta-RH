@@ -8,7 +8,7 @@
         p.style.fontSize = "20px";
         p.style.zIndex = "999999";
         p.style.position = "absolute";
-        p.textContent = msg + " | " + (error <head><head> error.stack);
+        p.textContent = msg + " | " + (error && error.stack ? error.stack : "");
         document.body.appendChild(p);
       };
       window.addEventListener("unhandledrejection", function(event) {

@@ -114,7 +114,7 @@ exports.login = async (req, res) => {
     // 7. Resposta: Seta o cookie HttpOnly e manda apenas os dados do usuário publicamente
     res.cookie('access_token', token, {
       httpOnly: true,
-      secure: false, // Alterar para true quando houver certificado SSL em ambiente homolog/prod
+      secure: true, // Habilitado para HTTPS no DNS conectarh.conasa.com
       sameSite: 'lax',
       maxAge: 15 * 60 * 1000 // 15 minutos
     });
@@ -140,7 +140,7 @@ exports.login = async (req, res) => {
 exports.logout = (req, res) => {
   res.clearCookie('access_token', {
     httpOnly: true,
-    secure: false,
+    secure: true,
     sameSite: 'lax'
   });
   return res.status(200).json({ success: true, message: 'Logout concluído' });

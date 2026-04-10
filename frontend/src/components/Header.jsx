@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 
 export default function Header() {
-  const [userData, setUserData] = useState({ name: 'Administrador', initials: 'AD', role: 'RH' });
+  const [userData, setUserData] = useState({ name: 'Igor Felipe', initials: 'IF', role: 'AAAAA' });
 
   useEffect(() => {
     try {
       const stored = localStorage.getItem('@ConectaRH:user');
       if (stored) {
         const user = JSON.parse(stored);
-        const fullName = user.name || 'Administrador';
+        const fullName = user.name || 'Igor Felipe';
 
         // Extrai iniciais do primeiro e último nome
         const parts = fullName.split(' ');
@@ -21,7 +21,7 @@ export default function Header() {
 
         setUserData({
           name: fullName,
-          role: user.role || 'Administrador',
+          role: user.role || 'Igor Felipe',
           initials
         });
       }

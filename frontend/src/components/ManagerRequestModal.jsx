@@ -58,7 +58,7 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
     const fetchCostCenters = async () => {
       try {
         const token = localStorage.getItem('@ConectaRH:access_token');
-        const res = await axios.get('http://192.168.0.144:3001/api/access/cost-centers', {
+        const res = await axios.get('https://conectarh.conasa.com/api/access/cost-centers', {
           params: { empresaId, filialId },
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -104,7 +104,7 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
     try {
       const token = localStorage.getItem('@ConectaRH:access_token');
       const response = await axios.post(
-        'http://192.168.0.144:3001/api/access/request',
+        'https://conectarh.conasa.com/api/access/request',
         {
           requestedDepts: selectedDepts,
           justification,
@@ -215,28 +215,35 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
                     </p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-52 overflow-y-auto pr-1">
                     {costCenters.map(cc => {
                       const isSelected = selectedDepts.some(d => d.code === cc.costCenterCode);
                       return (
                         <div
                           key={cc.id}
                           onClick={() => handleToggleDept(cc)}
-                          className={`flex items - center gap - 3 p - 3 rounded - xl border transition - all cursor - pointer select - none
-                            ${
-        isSelected
-          ? 'bg-blue-600/10 border-blue-500/50 text-blue-400'
-          : 'bg-gray-950 border-gray-800 text-gray-400 hover:border-gray-700'
-      } `}
+                          className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer select-none ${
+                            isSelected
+                              ? 'bg-blue-600/10 border-blue-500/50'
+                              : 'bg-gray-900 border-gray-800 hover:border-gray-700 hover:bg-gray-800/60'
+                          }`}
                         >
-                          <div className={`w - 4 h - 4 rounded - sm border flex items - center justify - center shrink - 0
-                            ${ isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-600 bg-gray-900' }
-      `}>
-                            {isSelected && <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>}
+                          <div className={`w-4 h-4 rounded-sm border flex items-center justify-center shrink-0 ${
+                            isSelected ? 'bg-blue-500 border-blue-500 text-white' : 'border-gray-600 bg-gray-950'
+                          }`}>
+                            {isSelected && (
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`text - xs font - semibold truncate ${ isSelected ? 'text-white' : 'text-gray-300' } `}>{cc.costCenterDescription}</p>
-                            <p className="text-[10px] opacity-70 truncate">Código: {cc.costCenterCode}</p>
+                            <p className={`text-xs font-semibold truncate ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                              {cc.costCenterDescription}
+                            </p>
+                            <p className="text-[10px] text-gray-500 truncate mt-0.5">
+                              Código: {cc.costCenterCode}
+                            </p>
                           </div>
                         </div>
                       );
@@ -279,7 +286,7 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
                 <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
                 Enviando...
               </>
-            ) : `Enviar Solicitação(${ selectedDepts.length })`}
+            ) : `Enviar Solicitação(${selectedDepts.length})`}
           </button>
         </div>
       </div>

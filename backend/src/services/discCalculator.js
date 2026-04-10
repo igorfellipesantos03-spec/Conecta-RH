@@ -111,17 +111,32 @@ function calcularDISC(respostas) {
     }
   });
 
-  // Utiliza a contagem bruta diretamente como pontuação, sem conversão para percentual
-  const perfilAdaptado = getPerfilPredominante(adaptadoBruto);
-  const perfilNatural = getPerfilPredominante(naturalBruto);
+  // Aplica a conversão usando as tabelas oficiais
+  const adaptadoConvertido = {
+    D: lookupScore(ADAPTED_TABLE, 'D', adaptadoBruto.D),
+    I: lookupScore(ADAPTED_TABLE, 'I', adaptadoBruto.I),
+    S: lookupScore(ADAPTED_TABLE, 'S', adaptadoBruto.S),
+    C: lookupScore(ADAPTED_TABLE, 'C', adaptadoBruto.C),
+  };
+
+  const naturalConvertido = {
+    D: lookupScore(NATURAL_TABLE, 'D', naturalBruto.D),
+    I: lookupScore(NATURAL_TABLE, 'I', naturalBruto.I),
+    S: lookupScore(NATURAL_TABLE, 'S', naturalBruto.S),
+    C: lookupScore(NATURAL_TABLE, 'C', naturalBruto.C),
+  };
+
+  const perfilAdaptado = getPerfilPredominante(adaptadoConvertido);
+  const perfilNatural = getPerfilPredominante(naturalConvertido);
 
   return {
-    ambienteNatural: naturalBruto,
-    ambienteAdaptado: adaptadoBruto,
+    ambienteNatural: naturalConvertido,
+    ambienteAdaptado: adaptadoConvertido,
     bruto: { adaptado: adaptadoBruto, natural: naturalBruto },
     perfilPredominanteNatural: perfilNatural,
     perfilPredominanteAdaptado: perfilAdaptado,
-    perfilMestre: perfilNatural
+    perfilMestre: perfilNatural,
+    finalizadoEm: new Date().toISOString()
   };
 }
 

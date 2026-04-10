@@ -91,11 +91,12 @@ export const DISC_PROFILES = {
 export function DiscProfileAnalysis({ resultado }) {
   if (!resultado) return null;
 
-  const natural = resultado.natural || resultado.ambienteNatural || {};
-  if (!Object.keys(natural).length) return null;
+  // ALTERADO: Usa Ambiente Adaptado em vez de Ambiente Natural para definir a personalidade dominante
+  const adaptado = resultado.adaptado || resultado.ambienteAdaptado || {};
+  if (!Object.keys(adaptado).length) return null;
 
-  // Encontra a letra com maior pontuação
-  const dominante = Object.entries(natural).reduce(
+  // Encontra a letra com maior pontuação no Ambiente Adaptado
+  const dominante = Object.entries(adaptado).reduce(
     (max, [k, v]) => (v > max[1] ? [k, v] : max),
     ['D', -1]
   )[0];

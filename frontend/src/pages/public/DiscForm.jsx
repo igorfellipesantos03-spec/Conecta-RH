@@ -8,30 +8,30 @@ import axios from 'axios';
  * '-' significa que aquela alternativa NÃO pontua nada (é descartada do cálculo).
  */
 export const DISC_MAPPING = {
-  1:  { MAIS: { A: 'S', B: 'I', C: 'C', D: '-' }, MENOS: { A: 'D', B: '-', C: 'S', D: 'C' } },
-  2:  { MAIS: { A: 'I', B: 'S', C: 'D', D: '-' }, MENOS: { A: 'C', B: 'S', C: 'D', D: 'I' } },
-  3:  { MAIS: { A: '-', B: 'D', C: 'S', D: 'I' }, MENOS: { A: '-', B: 'D', C: 'C', D: 'I' } },
-  4:  { MAIS: { A: '-', B: 'S', C: 'D', D: 'I' }, MENOS: { A: '-', B: 'C', C: 'D', D: 'I' } },
-  5:  { MAIS: { A: 'I', B: 'C', C: 'D', D: 'S' }, MENOS: { A: '-', B: 'C', C: 'D', D: 'S' } },
-  6:  { MAIS: { A: 'D', B: 'S', C: 'I', D: 'C' }, MENOS: { A: 'D', B: 'S', C: '-', D: 'C' } },
-  7:  { MAIS: { A: '-', B: 'S', C: 'D', D: 'I' }, MENOS: { A: 'C', B: 'S', C: 'D', D: '-' } },
-  8:  { MAIS: { A: 'D', B: 'I', C: 'S', D: 'C' }, MENOS: { A: 'D', B: 'I', C: '-', D: 'C' } },
-  9:  { MAIS: { A: 'I', B: 'S', C: 'D', D: 'C' }, MENOS: { A: 'I', B: 'S', C: '-', D: 'C' } },
-  10: { MAIS: { A: 'D', B: 'S', C: 'I', D: 'C' }, MENOS: { A: 'D', B: '-', C: 'I', D: 'C' } },
-  11: { MAIS: { A: 'I', B: '-', C: 'C', D: 'D' }, MENOS: { A: 'I', B: 'S', C: 'C', D: 'D' } },
-  12: { MAIS: { A: 'C', B: 'D', C: 'S', D: 'I' }, MENOS: { A: 'C', B: 'D', C: 'S', D: '-' } },
-  13: { MAIS: { A: 'D', B: '-', C: 'S', D: 'C' }, MENOS: { A: 'D', B: 'I', C: 'S', D: 'C' } },
-  14: { MAIS: { A: 'C', B: 'D', C: 'S', D: 'I' }, MENOS: { A: 'C', B: 'D', C: 'I', D: 'S' } },
-  15: { MAIS: { A: 'S', B: 'I', C: 'C', D: 'D' }, MENOS: { A: '-', B: 'I', C: 'C', D: 'D' } },
-  16: { MAIS: { A: 'D', B: 'I', C: 'C', D: '-' }, MENOS: { A: 'D', B: 'I', C: 'S', D: 'C' } },
-  17: { MAIS: { A: 'C', B: 'I', C: 'S', D: 'D' }, MENOS: { A: 'C', B: '-', C: 'S', D: 'D' } },
-  18: { MAIS: { A: 'C', B: 'S', C: 'I', D: 'D' }, MENOS: { A: 'C', B: 'S', C: '-', D: 'D' } },
-  19: { MAIS: { A: 'S', B: 'D', C: 'I', D: 'C' }, MENOS: { A: '-', B: 'D', C: 'I', D: 'C' } },
-  20: { MAIS: { A: 'D', B: '-', C: 'S', D: 'I' }, MENOS: { A: 'D', B: 'C', C: 'S', D: 'I' } },
-  21: { MAIS: { A: 'I', B: 'S', C: 'D', D: 'C' }, MENOS: { A: 'I', B: 'S', C: 'D', D: '-' } },
-  22: { MAIS: { A: 'I', B: 'C', C: 'D', D: 'S' }, MENOS: { A: 'I', B: 'C', C: 'D', D: '-' } },
-  23: { MAIS: { A: 'I', B: 'C', C: 'D', D: 'S' }, MENOS: { A: 'I', B: 'C', C: 'D', D: '-' } },
-  24: { MAIS: { A: 'D', B: 'I', C: 'S', D: 'C' }, MENOS: { A: 'D', B: 'I', C: '-', D: 'C' } },
+  1: { MAIS: { A: 'S', B: 'I', C: 'C', D: '-' }, MENOS: { A: 'S', B: '-', C: 'C', D: 'D' } },
+  2: { MAIS: { A: 'I', B: 'C', C: 'D', D: '-' }, MENOS: { A: 'I', B: 'C', C: 'D', D: 'S' } },
+  3: { MAIS: { A: '-', B: 'D', C: 'S', D: 'I' }, MENOS: { A: 'C', B: 'D', C: '-', D: 'I' } },
+  4: { MAIS: { A: 'C', B: 'S', C: '-', D: 'I' }, MENOS: { A: '-', B: 'S', C: 'D', D: 'I' } },
+  5: { MAIS: { A: '-', B: 'C', C: '-', D: 'S' }, MENOS: { A: 'I', B: 'C', C: 'D', D: 'S' } },
+  6: { MAIS: { A: 'D', B: 'S', C: '-', D: '-' }, MENOS: { A: 'D', B: 'S', C: 'I', D: 'C' } },
+  7: { MAIS: { A: '-', B: 'S', C: 'D', D: 'I' }, MENOS: { A: 'C', B: '-', C: 'D', D: 'I' } },
+  8: { MAIS: { A: 'D', B: 'I', C: '-', D: '-' }, MENOS: { A: '-', B: '-', C: 'S', D: 'C' } },
+  9: { MAIS: { A: 'I', B: 'S', C: 'D', D: 'C' }, MENOS: { A: 'I', B: 'S', C: 'D', D: 'C' } },
+  10: { MAIS: { A: 'D', B: 'C', C: '-', D: 'S' }, MENOS: { A: 'D', B: '-', C: 'I', D: 'S' } },
+  11: { MAIS: { A: 'I', B: 'S', C: '-', D: 'D' }, MENOS: { A: 'I', B: 'S', C: '-', D: 'D' } },
+  12: { MAIS: { A: '-', B: 'D', C: 'C', D: 'S' }, MENOS: { A: 'I', B: 'D', C: '-', D: 'S' } },
+  13: { MAIS: { A: 'D', B: 'I', C: 'S', D: '-' }, MENOS: { A: '-', B: 'I', C: 'S', D: 'C' } },
+  14: { MAIS: { A: 'C', B: 'D', C: 'I', D: 'S' }, MENOS: { A: 'C', B: '-', C: 'I', D: '-' } },
+  15: { MAIS: { A: 'S', B: '-', C: 'C', D: '-' }, MENOS: { A: '-', B: '-', C: 'C', D: 'D' } },
+  16: { MAIS: { A: 'I', B: '-', C: '-', D: 'D' }, MENOS: { A: '-', B: 'S', C: 'C', D: 'D' } },
+  17: { MAIS: { A: 'C', B: 'S', C: '-', D: 'D' }, MENOS: { A: '-', B: 'S', C: 'I', D: 'D' } },
+  18: { MAIS: { A: 'I', B: 'S', C: '-', D: 'D' }, MENOS: { A: '-', B: '-', C: 'C', D: 'D' } },
+  19: { MAIS: { A: 'C', B: 'D', C: 'I', D: 'S' }, MENOS: { A: '-', B: 'D', C: 'I', D: 'S' } },
+  20: { MAIS: { A: 'D', B: 'C', C: '-', D: 'I' }, MENOS: { A: 'D', B: '-', C: 'S', D: 'I' } },
+  21: { MAIS: { A: 'S', B: '-', C: 'D', D: 'C' }, MENOS: { A: 'I', B: 'S', C: 'D', D: 'C' } },
+  22: { MAIS: { A: 'I', B: '-', C: 'D', D: 'S' }, MENOS: { A: 'I', B: 'C', C: 'D', D: 'S' } },
+  23: { MAIS: { A: 'I', B: 'C', C: 'D', D: '-' }, MENOS: { A: 'I', B: '-', C: 'D', D: 'S' } },
+  24: { MAIS: { A: 'D', B: 'S', C: 'I', D: 'C' }, MENOS: { A: 'D', B: 'S', C: 'I', D: 'C' } }
 };
 
 export const questoesDISC = [
@@ -277,7 +277,7 @@ export default function DiscForm() {
   useEffect(() => {
     const fetchLinkData = async () => {
       try {
-        const response = await axios.get(`http://192.168.0.144:3001/api/disc/link/${token}`);
+        const response = await axios.get(`https://conectarh.conasa.com/api/disc/link/${token}`);
         if (response.data.sucesso) {
           setLinkContext(response.data.dados);
           if (response.data.dados.status === 'EXPIRED') {
@@ -309,11 +309,11 @@ export default function DiscForm() {
     // Fluxo Funcionario Interno (Valida CPF no Protheus)
     if (linkContext?.isEmployee) {
       try {
-        const response = await axios.get(`http://192.168.0.144:3001/api/employees/check-cpf/${cpf}?token=${token}`);
+        const response = await axios.get(`https://conectarh.conasa.com/api/employees/check-cpf/${cpf}?token=${token}`);
         if (response.data.sucesso) {
           // Dispara também o POST pro nosso backend para registrar que iniciou (PROGRESS) e salvar o CPF/Nome
           try {
-            await axios.post(`http://192.168.0.144:3001/api/disc/link/${token}/iniciar`, {
+            await axios.post(`https://conectarh.conasa.com/api/disc/link/${token}/iniciar`, {
               nome: response.data.dados.name || response.data.dados.nome || 'Funcionário',
               cpf: cpf
             });
@@ -345,7 +345,7 @@ export default function DiscForm() {
         return;
       }
       try {
-        await axios.post(`http://192.168.0.144:3001/api/disc/link/${token}/iniciar`, {
+        await axios.post(`https://conectarh.conasa.com/api/disc/link/${token}/iniciar`, {
           nome: nomeCompleto.trim(),
           cpf: cpf
         });
@@ -417,7 +417,7 @@ export default function DiscForm() {
       const ADAPTED_TABLE = {
         D: [5, 15, 24, 34, 38, 43, 48, 54, 59, 65, 74, 76, 79, 83, 85, 94, 97, 97, 97, 97, 100, 100],
         I: [8, 20, 35, 43, 57, 68, 73, 82, 87, 91, 96, 96, 96, 96, 96, 96, 96, 100, 100, 100, 100, 100],
-        S: [11, 21, 30, 38, 45, 55, 60, 73, 75, 79, 85, 89, 96, 96, 96, 96, 96, 96, 100, 100, 100, 100],
+        S: [11, 21, 30, 38, 45, 55, 60, 77, 75, 79, 85, 89, 96, 96, 96, 96, 96, 96, 96, 100, 100, 100],
         C: [0, 16, 30, 40, 55, 66, 73, 85, 87, 97, 97, 97, 97, 97, 96, 100, 100, 100, 100, 100, 100, 100],
       };
 
@@ -425,7 +425,7 @@ export default function DiscForm() {
       const NATURAL_TABLE = {
         D: [100, 87, 75, 67, 60, 54, 47, 42, 40, 32, 28, 25, 22, 15, 11, 8, 5, 5, 5, 5, 5, 2],
         I: [100, 86, 75, 67, 55, 47, 37, 28, 22, 15, 10, 8, 8, 8, 8, 8, 8, 8, 5, 0, 0, 0],
-        S: [100, 97, 85, 75, 68, 60, 53, 42, 37, 28, 23, 16, 8, 5, 5, 5, 5, 5, 0, 0, 0, 0],
+        S: [100, 97, 85, 75, 68, 60, 53, 42, 37, 28, 23, 16, 8, 5, 5, 5, 5, 5, 5, 2, 2, 2],
         C: [100, 97, 83, 75, 66, 58, 52, 45, 38, 33, 23, 15, 7, 5, 5, 5, 0, 0, 0, 0, 0, 0],
       };
 
@@ -455,7 +455,7 @@ export default function DiscForm() {
 
       // Executa o POST para a API do backend sinalizando que o teste foi Finalizado (Status => CONCLUDED)
       try {
-        await axios.post(`http://192.168.0.144:3001/api/disc/link/${token}/finalizar`, {
+        await axios.post(`https://conectarh.conasa.com/api/disc/link/${token}/finalizar`, {
           respostas: Object.values(respostas),
           resultado: resultados,
           departamentCode: colaborador?.costCenterDescription

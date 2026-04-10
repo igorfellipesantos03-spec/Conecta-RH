@@ -136,7 +136,7 @@ const PORT = process.env.PORT || 3001;
 
 app.listen(PORT, () => {
   console.log(`🚀 Servidor ConectaRH rodando na porta ${PORT}`);
-  console.log(`📡 Status: http://localhost:${PORT}/api/status`);
+  console.log(`📡 Status: https://conectarh.conasa.com/api/status`);
   console.log(`🔒 Aceitando requisições apenas de: ${origensPermitidas}`);
-  console.log(`🔍 Funcionários: http://localhost:${PORT}/api/funcionarios?busca=NOME`);
+  console.log(`🔍 Funcionários: https://conectarh.conasa.com/api/funcionarios?busca=NOME`);
 });
