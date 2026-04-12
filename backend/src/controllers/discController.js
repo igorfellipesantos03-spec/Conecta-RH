@@ -92,8 +92,8 @@ const iniciarTeste = async (req, res) => {
 const concluirTeste = async (req, res) => {
   try {
     const { token } = req.params;
-    const { respostas, resultado, departamentCode, costCenterCode } = req.body;
-    await discLinkService.finalizarLink(token, respostas, resultado, departamentCode, costCenterCode);
+    const { respostas, resultado, departamentCode, departmentDescription, costCenterCode } = req.body;
+    await discLinkService.finalizarLink(token, respostas, resultado, departamentCode, departmentDescription);
     return res.status(200).json({ sucesso: true, mensagem: 'Teste concluído.' });
   } catch (error) {
     return res.status(500).json({ sucesso: false, mensagem: error.message });

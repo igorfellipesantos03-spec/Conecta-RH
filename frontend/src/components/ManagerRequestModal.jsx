@@ -33,9 +33,9 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
   const [empresaId, setEmpresaId] = useState('');
   const [filialId, setFilialId] = useState('01');
 
-  // Passo 2: Centros de Custo
-  const [costCenters, setCostCenters] = useState([]);
-  const [loadingCC, setLoadingCC] = useState(false);
+  // Passo 2: Departamentos
+  const [departments, setDepartments] = useState([]);
+  const [loadingDepts, setLoadingDepts] = useState(false);
   const [selectedDepts, setSelectedDepts] = useState([]);
 
   // Passo 3: Justificativa + Submissão
@@ -51,28 +51,28 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
     if (needsManualFilial && !filialId) return;
 
     setSelectedDepts([]);
-    setCostCenters([]);
-    setLoadingCC(true);
+    setDepartments([]);
+    setLoadingDepts(true);
     setError(null);
 
-    const fetchCostCenters = async () => {
+    const fetchDepartments = async () => {
       try {
         const token = localStorage.getItem('@ConectaRH:access_token');
-        const res = await axios.get('https://conectarh.conasa.com/api/access/cost-centers', {
+        const res = await axios.get('https://conectarh.conasa.com/api/access/departments', {
           params: { empresaId, filialId },
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.data.success) {
-          setCostCenters(res.data.data || []);
+          setDepartments(res.data.data || []);
         }
       } catch (err) {
-        setError('Erro ao buscar centros de custo. Tente novamente.');
+        setError('Erro ao buscar departamentos. Tente novamente.');
       } finally {
-        setLoadingCC(false);
+        setLoadingDepts(false);
       }
     };
 
-    fetchCostCenters();
+    fetchDepartments();
   }, [empresaId, filialId]);
 
   const handleEmpresaChange = (id) => {
@@ -84,11 +84,13 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
     }
   };
 
-  const handleToggleDept = (cc) => {
+  const handleToggleDept = (dept) => {
     setSelectedDepts(prev => {
-      const exists = prev.find(d => d.code === cc.costCenterCode);
-      if (exists) return prev.filter(d => d.code !== cc.costCenterCode);
-      return [...prev, { code: cc.costCenterCode, name: cc.costCenterDescription }];
+      const deptCode = (dept.departmentCode || dept.costCenterCode || '').trim();
+      const deptDesc = dept.departmentDescription || dept.costCenterDescription || '';
+      const exists = prev.find(d => d.code === deptCode);
+      if (exists) return prev.filter(d => d.code !== deptCode);
+      return [...prev, { code: deptCode, name: deptDesc }];
     });
   };
 
@@ -197,7 +199,7 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
                   {empresaLabel && <span className="text-gray-500 font-normal"> — {empresaLabel}</span>}
                 </label>
 
-                {loadingCC ? (
+                {loadingDepts ? (
                   <div className="flex items-center justify-center py-8 text-gray-500 text-sm">
                     <svg className="w-5 h-5 animate-spin mr-2" fill="none" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -205,7 +207,7 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
                     </svg>
                     Buscando setores...
                   </div>
-                ) : costCenters.length === 0 ? (
+                ) : departments.length === 0 ? (
                   <div className="border border-dashed border-gray-800 rounded-xl p-6 text-center">
                     <p className="text-gray-500 text-sm">
                       Nenhum setor encontrado para esta empresa/filial.
@@ -216,12 +218,14 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-52 overflow-y-auto pr-1">
-                    {costCenters.map(cc => {
-                      const isSelected = selectedDepts.some(d => d.code === cc.costCenterCode);
+                    {departments.map(dept => {
+                      const deptCode = (dept.departmentCode || dept.costCenterCode || '').trim();
+                      const deptDesc = dept.departmentDescription || dept.costCenterDescription || '';
+                      const isSelected = selectedDepts.some(d => d.code === deptCode);
                       return (
                         <div
-                          key={cc.id}
-                          onClick={() => handleToggleDept(cc)}
+                          key={dept.id}
+                          onClick={() => handleToggleDept(dept)}
                           className={`flex items-center gap-3 p-3 rounded-lg border transition-all cursor-pointer select-none ${
                             isSelected
                               ? 'bg-blue-600/10 border-blue-500/50'
@@ -239,10 +243,10 @@ export default function ManagerRequestModal({ onClose, onSuccess }) {
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className={`text-xs font-semibold truncate ${isSelected ? 'text-white' : 'text-gray-300'}`}>
-                              {cc.costCenterDescription}
+                              {deptDesc}
                             </p>
                             <p className="text-[10px] text-gray-500 truncate mt-0.5">
-                              Código: {cc.costCenterCode}
+                              Código: {deptCode}
                             </p>
                           </div>
                         </div>

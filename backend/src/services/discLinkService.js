@@ -51,8 +51,8 @@ class DiscLinkService {
           include: { managedDepts: true } 
         });
         if (user && user.managedDepts && user.managedDepts.length > 0) {
-          const deptsNames = user.managedDepts.map(d => d.departmentName);
-          where.departamentCode = { in: deptsNames };
+          const deptsCodes = user.managedDepts.map(d => d.departmentCode);
+          where.departamentCode = { in: deptsCodes };
         } else {
           where.departamentCode = { in: [] };
         }
@@ -129,47 +129,52 @@ class DiscLinkService {
   /**
    * Finaliza o teste.
    */
-  async finalizarLink(id, respostas, resultado, departamentCode, costCenterCode) {
+  async finalizarLink(id, respostas, resultado, departamentCode, departmentDescription) {
     const novaExpiracao = new Date();
     novaExpiracao.setMinutes(novaExpiracao.getMinutes() + 10);
+
+    const deptCode = departamentCode ? departamentCode.trim() : null;
+    // Limpar descrição: "TI - DIORGNY" → "TI"
+    const rawDesc = departmentDescription || '';
+    const cleanDeptDesc = rawDesc.split(' - ')[0].trim() || null;
 
     const concludedLink = await prisma.discLink.update({
       where: { id },
       data: {
         respostas: respostas || null,
         resultado: resultado || null,
-        departamentCode: departamentCode || null,
+        departamentCode: deptCode,
+        departmentDescription: cleanDeptDesc,
         status: 'CONCLUDED',
         isActive: false,
         expiraEm: novaExpiracao
       }
     });
 
-    const code = costCenterCode ? costCenterCode.trim() : null;
-    const description = departamentCode ? departamentCode.trim() : null;
+    const cleanDesc = cleanDeptDesc;
     const empresaId = concludedLink.companyId;
     const filialId = concludedLink.branchId;
 
-    if (code && description && empresaId && filialId) {
+    if (deptCode && cleanDesc && empresaId && filialId) {
       try {
-        await prisma.costCenter.upsert({
+        await prisma.department.upsert({
           where: {
-            costCenterCode_empresaId_filialId: {
-              costCenterCode: code,
+            departmentCode_empresaId_filialId: {
+              departmentCode: deptCode,
               empresaId,
               filialId
             }
           },
-          update: { costCenterDescription: description },
+          update: { departmentDescription: cleanDesc },
           create: {
-            costCenterCode: code,
-            costCenterDescription: description,
+            departmentCode: deptCode,
+            departmentDescription: cleanDesc,
             empresaId,
             filialId
           }
         });
       } catch (e) {
-        console.warn('Erro ao cachear CostCenter:', e.message);
+        console.warn('Erro ao cachear Department:', e.message);
       }
     }
 

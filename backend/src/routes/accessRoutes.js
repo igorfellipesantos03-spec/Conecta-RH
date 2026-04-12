@@ -7,8 +7,10 @@ const checkRole = require('../middlewares/checkRoleMiddleware');
 // Rotas de Colaborador (Qualquer usuário logado)
 router.post('/request', verifyToken, accessController.createRequest);
 
-// Centros de Custo disponíveis (para o modal de solicitação)
-router.get('/cost-centers', verifyToken, accessController.getCostCenters);
+// Departamentos disponíveis (para o modal de solicitação)
+router.get('/departments', verifyToken, accessController.getDepartments);
+// Alias retrocompatível — deprecated, usar /departments
+router.get('/cost-centers', verifyToken, accessController.getDepartments);
 
 // Rotas de RH / Admin
 router.get('/requests', verifyToken, checkRole('ADMIN', 'RH'), accessController.getRequests);

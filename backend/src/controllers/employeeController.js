@@ -52,14 +52,22 @@ const checkCpf = async (req, res) => {
       // Retorna o primeiro encontrado e aplica LGPD (higienização)
       const func = Array.isArray(items) ? items[0] : items;
 
+      // Limpar descrição do departamento: "TI - DIORGNY" → "TI"
+      const rawDeptDesc = func.departmentDescription || '';
+      const cleanDeptDesc = rawDeptDesc.split(' - ')[0].trim();
+      const deptCode = (func.departamentCode || '').trim();
+
       return res.status(200).json({
         sucesso: true,
         dados: {
           isEmployee: true,
           nome: func.name,
           name: func.name, // Retrocompatibilidade temporária com DiscForm
-          costCenterDescription: func.costCenterDescription,
-          costCenterCode: func.costCenterCode  // Código do centro de custo para cache
+          departamentCode: deptCode,
+          departmentDescription: cleanDeptDesc,
+          // Retrocompatibilidade temporária — front-end legado usa estes campos
+          costCenterCode: deptCode,
+          costCenterDescription: cleanDeptDesc
         }
       });
 

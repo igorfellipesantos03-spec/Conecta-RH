@@ -59,7 +59,7 @@ async function buscarFuncionarios(userProtheusToken, nomeBusca, companyId, branc
   const params = {
     product: 'PROTHEUS',
     companyId: companyId,
-    fields: 'companyKey,branch,code,name,id,cpf,RA_CIC',
+    fields: 'companyKey,branch,code,name,id,cpf,RA_CIC,departamentCode,departmentDescription,costCenterCode,costCenterDescription',
     filter: "RA_NOMECMP LIKE '" + nomeBusca.toUpperCase() + "%'",
   };
 

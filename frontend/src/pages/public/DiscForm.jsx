@@ -458,7 +458,8 @@ export default function DiscForm() {
         await axios.post(`https://conectarh.conasa.com/api/disc/link/${token}/finalizar`, {
           respostas: Object.values(respostas),
           resultado: resultados,
-          departamentCode: colaborador?.costCenterDescription
+          departamentCode: colaborador?.departamentCode || colaborador?.costCenterCode,
+          departmentDescription: colaborador?.departmentDescription || colaborador?.costCenterDescription
         });
       } catch (err) {
         console.warn('Erro ao finalizar o link no banco:', err);

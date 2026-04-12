@@ -103,21 +103,24 @@ const approveRequest = async (req, res) => {
       const depts = (request.requestedDepts || []);
       for (const dept of depts) {
         const code = dept.code || dept.departamentCode || dept.id;
-        const name = dept.name || dept.description || dept.label;
-        if (!code || !name) continue;
+        const rawName = dept.name || dept.description || dept.label;
+        if (!code || !rawName) continue;
+        
+        // Limpar descrição: "TI - DIORGNY" → "TI"
+        const cleanName = rawName.toString().split(' - ')[0].trim();
         
         await tx.managerDepartment.upsert({
           where: {
             userId_departmentCode: {
               userId: request.userId,
-              departmentCode: code.toString()
+              departmentCode: code.toString().trim()
             }
           },
           update: {},
           create: {
             userId: request.userId,
-            departmentCode: code.toString(),
-            departmentName: name.toString()
+            departmentCode: code.toString().trim(),
+            departmentName: cleanName
           }
         });
       }
@@ -158,8 +161,8 @@ const rejectRequest = async (req, res) => {
   }
 };
 
-// Listar Centros de Custo disponíveis (filtrado por empresa+filial)
-const getCostCenters = async (req, res) => {
+// Listar Departamentos disponíveis (filtrado por empresa+filial)
+const getDepartments = async (req, res) => {
   try {
     const { empresaId, filialId } = req.query;
 
@@ -167,15 +170,25 @@ const getCostCenters = async (req, res) => {
       return res.status(400).json({ success: false, message: 'empresaId e filialId são obrigatórios.' });
     }
 
-    const costCenters = await prisma.costCenter.findMany({
+    const departments = await prisma.department.findMany({
       where: { empresaId, filialId },
-      orderBy: { costCenterDescription: 'asc' }
+      orderBy: { departmentDescription: 'asc' }
     });
 
-    return res.status(200).json({ success: true, data: costCenters });
+    // Retrocompatibilidade: retornar também com nomes legados para frontend
+    const mappedData = departments.map(d => ({
+      ...d,
+      departmentCode: d.departmentCode,
+      departmentDescription: d.departmentDescription,
+      // Compat legado
+      costCenterCode: d.departmentCode,
+      costCenterDescription: d.departmentDescription
+    }));
+
+    return res.status(200).json({ success: true, data: mappedData });
   } catch (error) {
-    console.error('Erro buscar cost centers:', error);
-    return res.status(500).json({ success: false, message: 'Erro interno ao buscar centros de custo.' });
+    console.error('Erro buscar departamentos:', error);
+    return res.status(500).json({ success: false, message: 'Erro interno ao buscar departamentos.' });
   }
 };
 
@@ -184,5 +197,5 @@ module.exports = {
   getRequests,
   approveRequest,
   rejectRequest,
-  getCostCenters
+  getDepartments
 };

@@ -688,7 +688,7 @@ export default function DiscHub() {
                   <div className="flex items-center justify-between">
                     <span className="text-gray-500 text-xs">
                       {link.isEmployee 
-                        ? `👤 Funcionário${link.departamentCode ? ` - ${link.departamentCode}` : ''}` 
+                        ? `👤 Funcionário${link.departmentDescription ? ` - ${link.departmentDescription}` : (link.departamentCode ? ` - ${link.departamentCode}` : '')}` 
                         : '🧩 Candidato'}
                     </span>
                     <span className="text-blue-400 text-xs font-medium group-hover:underline">

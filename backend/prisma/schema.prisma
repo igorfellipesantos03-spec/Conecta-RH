@@ -67,7 +67,8 @@ model DiscLink {
   nome            String?
   respostas       Json?
   resultado       Json?
-  departamentCode String?  @map("departament_code")
+  departamentCode        String?  @map("departament_code")
+  departmentDescription  String?  @map("department_description")
 
   @@map("disc_links")
 }
@@ -136,16 +137,16 @@ model AccessRequest {
   @@map("access_requests")
 }
 
-// Cache de Centros de Custo — populado organicamente quando DISCs são concluídos
-model CostCenter {
+// Cache de Departamentos — populado organicamente quando DISCs são concluídos
+model Department {
   id                    String   @id @default(uuid())
-  costCenterCode        String   @map("cost_center_code")
-  costCenterDescription String   @map("cost_center_description")
+  departmentCode        String   @map("department_code")
+  departmentDescription String   @map("department_description")
   empresaId             String   @map("empresa_id")
   filialId              String   @map("filial_id")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
-  @@unique([costCenterCode, empresaId, filialId])
-  @@map("cost_centers")
+  @@unique([departmentCode, empresaId, filialId])
+  @@map("departments")
 }
